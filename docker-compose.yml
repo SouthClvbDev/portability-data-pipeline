@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: portability-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: portability_db
+      POSTGRES_USER: data_user
+      POSTGRES_PASSWORD: data_password_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

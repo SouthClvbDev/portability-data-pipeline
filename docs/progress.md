@@ -1,326 +1,133 @@
-# Bitácora del proyecto
+# Bitácora del proyecto: Portability Data Pipeline
 
 ## Objetivo
 
-Construir un pipeline de datos sintéticos para analizar trámites de portabilidad numérica gestionados por un área de Backoffice.
+Construir un pipeline reproducible con datos **sintéticos** de trámites de portabilidad para analizar la operación de Backoffice. El proyecto retoma la experiencia profesional con BigQuery, SAS Enterprise Guide y Power BI, pero utiliza Python, PostgreSQL y Docker en una implementación propia. No incorpora datos reales de Telecom.
 
-El proyecto busca demostrar experiencia en:
+## Mapa de archivos
 
-- Generación de datos.
-- Validación de calidad.
-- Transformación.
-- Carga en PostgreSQL.
-- Consultas SQL.
-- Indicadores operativos.
-- Visualización en Power BI.
-- Automatización y buenas prácticas.
+| Archivo | Función |
+|---|---|
+| `src/generate_data.py` | Genera trámites ficticios de manera reproducible. |
+| `data/sample/portability_cases.csv` | Muestra sintética generada, versionada en Git. |
+| `src/validation/validate_data.py` | Comprueba estructura y reglas de calidad antes del procesamiento. |
+| `src/transformations/transform_cases.py` | Prepara campos analíticos, indicadores y clasificación de SLA. |
+| `data/processed/portability_cases_clean.csv` | Salida transformada; se regenera y está excluida de Git. |
+| `src/load_to_postgres.py` | Carga la salida transformada en PostgreSQL. |
+| `docker-compose.yml` | Define el servicio local de PostgreSQL y su volumen. |
+| `sql/analytics/01_operational_views.sql` | Define las cinco vistas de consulta para indicadores. |
+| `dashboard/portability_operations.pbix` | Tablero de Power BI conectado a PostgreSQL (hito 8, según el avance reportado). |
+| `requirements.txt` | Dependencias del entorno Python. |
+| `.gitignore` | Excluye entorno virtual, archivos locales y datos procesados. |
+| `README.md` | Presentación general del proyecto. |
+| `docs/progress.md` | Esta bitácora de avances y decisiones. |
 
----
+## Flujo
 
-## Estructura principal
+1. `src/generate_data.py` genera `data/sample/portability_cases.csv`.
+2. `src/validation/validate_data.py` comprueba la calidad de la muestra.
+3. `src/transformations/transform_cases.py` genera `data/processed/portability_cases_clean.csv`.
+4. `src/load_to_postgres.py` carga la tabla `portability_cases`.
+5. `sql/analytics/01_operational_views.sql` crea las vistas para consulta.
+6. `dashboard/portability_operations.pbix` consume los datos en Power BI.
 
-```text
-portability-data-pipeline/
-├── data/
-│   ├── sample/
-│   ├── raw/
-│   └── processed/
-├── docs/
-├── sql/
-│   └── analytics/
-├── src/
-│   ├── ingestion/
-│   ├── transformations/
-│   └── validation/
-├── tests/
-├── dashboard/
-├── docker-compose.yml
-├── requirements.txt
-├── README.md
-└── .gitignore
+## Hitos completados
 
+### 1. Configuración inicial
 
+**Archivos:** `requirements.txt`, `.gitignore`, `README.md`.
 
- Archivos y responsabilidades
-Archivo	Responsabilidad
-src/generate_data.py	Genera trámites sintéticos de portabilidad
-src/validation/validate_data.py	Valida la calidad y consistencia de los datos
-src/transformations/transform_cases.py	Limpia y transforma los datos para análisis
-src/load_to_postgres.py	Carga el archivo procesado en PostgreSQL
-sql/analytics/01_operational_views.sql	Crea vistas analíticas para los indicadores
-docker-compose.yml	Levanta PostgreSQL mediante Docker
-requirements.txt	Registra las dependencias de Python
-.gitignore	Excluye archivos temporales y sensibles
-README.md	Presenta el objetivo y las características del proyecto
-docs/progress.md	Registra el avance técnico del proyecto
+- Se instalaron Git, Python, VS Code, Docker y WSL2 en Windows.
+- Se creó el proyecto en `D:\DataDeveloper\proyectos\portability-data-pipeline` y se inicializó Git.
+- Se usó Python 3.13 en `.venv` tras encontrar un problema de compilación de PyYAML con Python 3.15.
+- Se comprobaron las importaciones principales y se registraron dependencias en `requirements.txt`.
 
+### 2. Generación de datos sintéticos
 
-Flujo general del pipeline
-src/generate_data.py
-        ↓
-data/sample/portability_cases.csv
-        ↓
-src/validation/validate_data.py
-        ↓
-src/transformations/transform_cases.py
-        ↓
-data/processed/portability_cases_clean.csv
-        ↓
-src/load_to_postgres.py
-        ↓
-PostgreSQL: portability_cases
-        ↓
-sql/analytics/01_operational_views.sql
-        ↓
-Vistas analíticas
-        ↓
-Power BI
+**Archivo:** `src/generate_data.py`. **Salida:** `data/sample/portability_cases.csv`.
 
-Hitos completados
-1. Configuración inicial
-Archivos relacionados:
-- docker-compose.yml
-- requirements.txt
-- .gitignore
-- README.md
-Tareas realizadas:
-- Python configurado mediante un entorno virtual.
-- Git inicializado.
-- Git configurado con identidad de usuario.
-- Docker verificado correctamente.
-- WSL2 verificado correctamente.
-- PostgreSQL configurado mediante Docker Compose.
-- Dependencias de Python registradas en requirements.txt.
-2. Generación de datos sintéticos
-Archivo principal:
-src/generate_data.py
+- Se generaron 5000 casos ficticios con semilla fija (`42`).
+- Cada caso contiene identificador, fechas, estado, canal, equipo, situación documental y de contacto, motivos y horas de resolución cuando corresponde.
+- Se corrigieron las reglas para que `Pendiente contacto` implique contacto pendiente y `Pendiente documentación` implique documentación incompleta.
+- Los casos finalizados reciben fecha de cierre y horas de resolución.
 
-Archivo generado:
-data/sample/portability_cases.csv
+### 3. Validación de calidad
 
-Tareas realizadas:
-- Se creó un generador reproducible en Python.
-- Se generaron 5000 trámites ficticios.
-- Se utilizó una semilla fija para reproducir los resultados.
-- Se incluyeron fechas de recepción y cierre.
-- Se incluyeron estados operativos.
-- Se incluyeron canales de ingreso.
-- Se incluyeron equipos de Backoffice.
-- Se incluyeron estados de documentación y contacto.
-- Se incluyeron motivos de rechazo y anulación.
-- Se incluyeron tiempos de resolución.
-- No se utilizaron datos reales de Telecom.
-Estados incluidos:
-- Recibido
-- En análisis
-- Pendiente documentación
-- Pendiente contacto
-- Aprobado
-- Rechazado
-- Anulado
-3. Validación de calidad
-Archivo principal:
-src/validation/validate_data.py
+**Archivo:** `src/validation/validate_data.py`.
 
-Tareas realizadas:
-- Se validaron las columnas obligatorias.
-- Se validaron identificadores vacíos.
-- Se validaron identificadores duplicados.
-- Se validaron fechas de recepción.
-- Se validaron fechas de cierre.
-- Se validaron estados permitidos.
-- Se verificó que una fecha de cierre no sea anterior a la fecha de recepción.
-- Se verificó que los casos finalizados tengan fecha de cierre.
-- Se verificó que los casos abiertos no tengan fecha de cierre.
-- Se verificaron las reglas de documentación pendiente.
-- Se verificaron las reglas de contacto pendiente.
-- Se controlaron motivos de rechazo.
-- Se controlaron motivos de anulación.
-- Se controló la existencia del tiempo de resolución.
-Resultado esperado:
-VALIDACIÓN EXITOSA
-5000 registros validados
-No se encontraron inconsistencias.
+- Se comprueban columnas requeridas, identificadores vacíos o duplicados, fechas, estados válidos y coherencia entre estado, cierre y motivos.
+- Se comprueban las reglas de contacto y documentación pendiente.
+- La validación sobre el CSV regenerado no devolvió casos incoherentes para estas dos reglas.
 
-4. Transformación analítica
-Archivo principal:
-src/transformations/transform_cases.py
+### 4. Transformación analítica
 
-Archivo generado:
-data/processed/portability_cases_clean.csv
+**Archivo:** `src/transformations/transform_cases.py`. **Salida:** `data/processed/portability_cases_clean.csv`.
 
-Tareas realizadas:
-- Se convirtieron las fechas a tipos temporales.
-- Se agregó la fecha de recepción.
-- Se agregó el año de recepción.
-- Se agregó el número de mes.
-- Se agregó el nombre del mes.
-- Se agregó el día de la semana.
-- Se agregó el indicador is_closed.
-- Se agregó el indicador is_pending.
-- Se agregó el indicador has_documentation_pending.
-- Se agregó el indicador has_contact_pending.
-- Se agregó la clasificación sla_status.
-- Se ordenaron las columnas para facilitar el análisis.
-- Se generó un archivo procesado con 21 columnas.
-Clasificación de SLA:
-- No aplica
-- Dentro de SLA
-- Fuera de SLA
-5. Configuración de PostgreSQL
-Archivo principal:
-docker-compose.yml
+- Se añadieron fecha, año, mes, nombre del mes y día de la semana de recepción.
+- Se añadieron indicadores de caso cerrado o pendiente, documentación y contacto pendientes.
+- Se clasificó el SLA de los casos resueltos con umbral de 48 horas; los demás quedan como `No aplica`.
+- La ejecución informó 5000 registros, 21 columnas y la distribución: 2430 `No aplica`, 1953 `Dentro de SLA` y 617 `Fuera de SLA`.
 
-Configuración utilizada:
-- Imagen: PostgreSQL 16.
-- Base de datos: portability_db.
-- Usuario: data_user.
-- Puerto local: 5432.
-- Contenedor: portability-postgres.
-- Volumen persistente: postgres_data.
-Tareas realizadas:
-- Se creó el servicio PostgreSQL con Docker Compose.
-- Se verificó que el contenedor esté activo.
-- Se verificó que PostgreSQL acepte conexiones.
-- Se confirmó la disponibilidad del puerto 5432.
-Comando utilizado:
-docker compose up -d
+### 5. PostgreSQL local
 
-6. Carga de datos en PostgreSQL
-Archivo principal:
-src/load_to_postgres.py
+**Archivo:** `docker-compose.yml`.
 
-Tabla creada:
-portability_cases
+- Se inició PostgreSQL 16 en Docker con la base `portability_db`, el contenedor `portability-postgres` y el puerto local `5432`.
+- Los logs confirmaron que la base aceptaba conexiones y `docker compose ps` mostró el servicio activo.
+- El volumen de Docker conserva los datos entre reinicios del contenedor; no viaja automáticamente al copiar la carpeta del proyecto.
 
-Tareas realizadas:
-- Se leyó el archivo procesado.
-- Se estableció conexión desde Python con PostgreSQL.
-- Se utilizó SQLAlchemy para administrar la conexión.
-- Se utilizó psycopg2-binary como controlador.
-- Se cargaron 5000 registros.
-- Se verificó la cantidad total de registros.
-- Se verificó que no existan identificadores duplicados.
-Resultado:
-Registros cargados: 5000
-Identificadores únicos: 5000
-Duplicados: 0
+### 6. Carga en PostgreSQL
 
-7. Capa analítica SQL
-Archivo principal:
-sql/analytics/01_operational_views.sql
+**Archivo:** `src/load_to_postgres.py`. **Tabla:** `portability_cases`.
 
-Vistas creadas:
-vw_portability_kpis
-vw_cases_by_status
-vw_daily_volume
-vw_team_performance
-vw_sla_by_channel
+- Se instaló `psycopg2-binary` y se actualizó `requirements.txt`.
+- Se cargó el CSV procesado mediante pandas y SQLAlchemy.
+- Una consulta a PostgreSQL devolvió los siete estados con recuentos que suman 5000 casos.
+- La carga actual usa reemplazo completo de la tabla (`if_exists="replace"`); todavía no es incremental.
 
-vw_portability_kpis
-Contiene indicadores generales:
-- Total de trámites.
-- Casos abiertos.
-- Casos cerrados.
-- Casos aprobados.
-- Casos rechazados.
-- Casos anulados.
-- Casos dentro de SLA.
-- Casos fuera de SLA.
-vw_cases_by_status
-Contiene:
-- Cantidad de trámites por estado.
-- Porcentaje que representa cada estado.
-- Ordenamiento por volumen.
-vw_daily_volume
-Contiene:
-- Trámites recibidos por día.
-- Casos cerrados por día.
-- Casos pendientes por día.
-vw_team_performance
-Contiene:
-- Total de casos por equipo.
-- Aprobaciones por equipo.
-- Rechazos por equipo.
-- Anulaciones por equipo.
-- Pendientes por equipo.
-- Tiempo promedio de resolución.
-vw_sla_by_channel
-Contiene:
-- Casos dentro de SLA por canal.
-- Casos fuera de SLA por canal.
-- Porcentaje de cumplimiento de SLA por canal.
-Durante la creación de las vistas se resolvieron conversiones de tipos numéricos de PostgreSQL utilizando conversiones explícitas a numeric.
+### 7. Vistas analíticas SQL
 
+**Archivo:** `sql/analytics/01_operational_views.sql`.
 
-Comandos principales
-Activar el entorno virtual
+| Vista | Contenido |
+|---|---|
+| `vw_portability_kpis` | Volumen total, abiertos, cerrados, aprobados, rechazados, anulados y SLA. |
+| `vw_cases_by_status` | Cantidad y proporción de cada estado. |
+| `vw_daily_volume` | Casos agrupados por fecha de **recepción**, separados según su estado actual. |
+| `vw_team_performance` | Cantidades por equipo y promedio de horas para casos resueltos. |
+| `vw_sla_by_channel` | Casos dentro y fuera de SLA y porcentaje de cumplimiento por canal. |
+
+- Se corrigieron expresiones `ROUND` convirtiendo a `numeric` los cálculos que PostgreSQL obtenía como `double precision`.
+- La última ejecución devolvió cinco mensajes `CREATE VIEW`.
+- **Interpretación:** `vw_daily_volume.closed_cases` agrupa por día de recepción a casos que hoy están cerrados; no mide cuántos se cerraron ese día. La mejora para medir cierres diarios debe agrupar por `closed_at`.
+
+### 8. Dashboard en Power BI
+
+**Archivo:** `dashboard/portability_operations.pbix` (nombre acordado para el tablero). **Origen:** PostgreSQL y las vistas de `sql/analytics/01_operational_views.sql`.
+
+- Se conectó Power BI Desktop a `localhost:5432`, base `portability_db`, en modo Importar, según el avance indicado.
+- La página `Resumen Operativo` reúne tarjetas de volumen y estado, evolución por fecha de recepción, análisis por equipo y SLA por canal.
+- El archivo PBIX se guarda dentro de `dashboard/` para acompañar el proyecto.
+- Al actualizar en otra computadora, primero se debe levantar PostgreSQL, recargar la tabla y recrear las vistas; luego se actualizan las credenciales y la conexión local de Power BI si hace falta.
+
+## Ejecución desde la raíz del proyecto (PowerShell)
+
+```powershell
 .\.venv\Scripts\Activate.ps1
-
-Generar datos sintéticos
-python src\generate_data.py
-
-Validar datos
-python src\validation\validate_data.py
-
-Transformar datos
-python src\transformations\transform_cases.py
-
-Levantar PostgreSQL
 docker compose up -d
-
-Verificar el contenedor
-docker compose ps
-
-Cargar datos en PostgreSQL
+python src\generate_data.py
+python src\validation\validate_data.py
+python src\transformations\transform_cases.py
 python src\load_to_postgres.py
+Get-Content sql\analytics\01_operational_views.sql | docker exec -i portability-postgres psql -v ON_ERROR_STOP=1 -U data_user -d portability_db
+```
 
-Crear o actualizar vistas analíticas
-Get-Content sql\analytics\01_operational_views.sql |
-docker exec -i portability-postgres psql -U data_user -d portability_db
+Abrir `dashboard/portability_operations.pbix` en Power BI Desktop y usar **Actualizar** después de cargar la base y crear las vistas. `-v ON_ERROR_STOP=1` hace que `psql` corte la ejecución si una sentencia SQL falla.
 
-Consultar indicadores generales
-docker exec -it portability-postgres psql -U data_user -d portability_db -c "SELECT * FROM vw_portability_kpis;"
+## Próximas mejoras
 
-Consultar distribución por estado
-docker exec -it portability-postgres psql -U data_user -d portability_db -c "SELECT * FROM vw_cases_by_status;"
-
-Consultar rendimiento por equipo
-docker exec -it portability-postgres psql -U data_user -d portability_db -c "SELECT * FROM vw_team_performance;"
-
-Consultar SLA por canal
-docker exec -it portability-postgres psql -U data_user -d portability_db -c "SELECT * FROM vw_sla_by_channel;"
-
-
-Buenas prácticas aplicadas
-- Uso de entorno virtual de Python.
-- Uso de Git para control de versiones.
-- Uso de commits descriptivos.
-- Generación reproducible mediante una semilla fija.
-- Separación entre datos de ejemplo, datos procesados y código.
-- Validación antes de transformar los datos.
-- Separación entre generación, validación, transformación y carga.
-- Uso de Docker para PostgreSQL.
-- Uso de variables de configuración con valores de desarrollo.
-- Exclusión de entornos virtuales y archivos sensibles mediante .gitignore.
-- Uso de vistas SQL para centralizar indicadores.
-- No utilización de datos reales ni información sensible de Telecom.
-
-
-
-### 8. Conexión con Power BI
-
-Archivos relacionados:
-
-- `dashboard/portability_operations.pbix`
-- `sql/analytics/01_operational_views.sql`
-
-Tareas realizadas:
-
-- Se conectó Power BI con PostgreSQL.
-- Se utilizaron las vistas analíticas como fuentes.
-- Se creó una página de resumen operativo.
-- Se incorporaron indicadores de volumen y estados.
-- Se incorporó la evolución diaria de trámites.
-- Se agregó análisis por equipo.
-- Se agregó análisis de cumplimiento de SLA por canal.
+- Definir métricas temporales precisas: ingresos por `received_at`, cierres por `closed_at` y backlog a una fecha de corte. Los estados actuales de la muestra no reconstruyen por sí solos el historial de transiciones.
+- Crear una tabla calendario y un modelo que permita filtrar Power BI de forma coherente. Las vistas agregadas no comparten una dimensión de fecha/equipo/canal para que todos los segmentadores afecten a todos los gráficos.
+- Incorporar pruebas automáticas y verificar la integridad de los datos cargados.
+- Mover las credenciales locales de `docker-compose.yml` y del script de carga a variables de entorno antes de publicar el repositorio.
+- Reemplazar la carga con `replace` por una estrategia idempotente o incremental y evaluar dbt/orquestación posteriormente.

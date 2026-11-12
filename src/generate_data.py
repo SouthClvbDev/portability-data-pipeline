@@ -96,7 +96,15 @@ for index, received_at in enumerate(received_dates, start=1):
         contact_statuses,
         p=[0.55, 0.25, 0.20],
     )
+    
+    if status == "Pendiente contacto":
+        contact_status = "Pendiente"
 
+    if status == "Pendiente documentación":
+        documentation_status = "Incompleta"
+        
+    if status in ["Aprobado", "Rechazado", "Anulado"]:
+        documentation_status = "Completa"
     resolution_hours = None
     closed_at = None
 

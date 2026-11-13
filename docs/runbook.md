@@ -1,82 +1,252 @@
-# Manual de ejecución
+# Runbook: Portability Data Pipeline
 
-Proyecto local: `D:\DataDeveloper\proyectos\portability-data-pipeline`. Ejecutar estos comandos en **PowerShell** desde la raíz del proyecto.
+Guía operativa para iniciar, reconstruir, validar y detener el proyecto desde Windows PowerShell.
 
-## Después de reiniciar Windows
+## Requisitos
 
-1. Abrir Docker Desktop y esperar a que indique que el motor está funcionando.
-2. Abrir la carpeta del proyecto en VS Code y una terminal PowerShell.
-3. Ejecutar:
+- Python 3.13
+- Docker Desktop activo
+- Power BI Desktop
+- Git
+- Puerto local `5432` disponible
+
+## 1. Abrir el proyecto
 
 ```powershell
 cd D:\DataDeveloper\proyectos\portability-data-pipeline
+```
+
+## 2. Activar el entorno virtual
+
+```powershell
 .\.venv\Scripts\Activate.ps1
-python --version
+```
+
+Si PowerShell bloquea la activación en la sesión actual:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
+```
+
+## 3. Instalar dependencias
+
+Solo es necesario al crear o restaurar el entorno:
+
+```powershell
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+## 4. Iniciar PostgreSQL
+
+```powershell
 docker compose up -d
 docker compose ps
 ```
 
-`python --version` debe indicar Python 3.13.x dentro de `.venv`. `docker compose ps` debe mostrar `portability-postgres` en ejecución. Si Docker no responde, esperar a que Docker Desktop termine de iniciar y repetir los dos últimos comandos.
+El servicio esperado es `portability-postgres` en estado `Up`.
 
-## ¿Tengo que volver a ejecutar el pipeline?
+## 5. Reconstrucción completa
 
-Si ya cargaste la tabla y las vistas, **no**: el volumen de PostgreSQL persiste tras reiniciar. Comprobar primero:
-
-```powershell
-docker exec portability-postgres psql -U data_user -d portability_db -c "SELECT COUNT(*) FROM portability_cases;"
-docker exec portability-postgres psql -U data_user -d portability_db -c "SELECT * FROM vw_portability_kpis;"
-```
-
-Si ambas consultas funcionan y el total es 5000, abrir `dashboard/portability_operations.pbix` en Power BI Desktop y pulsar **Inicio → Actualizar** si hace falta. El modo Importar conserva la última instantánea en el PBIX; actualizar requiere PostgreSQL activo.
-
-## Reconstruir todo desde cero o después de copiar el proyecto a otra PC
-
-Si la carpeta `.venv` no existe, instalar Python 3.13 y crear el entorno:
+### 5.1 Generar el lote inicial
 
 ```powershell
-cd D:\DataDeveloper\proyectos\portability-data-pipeline
-py -3.13 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-```
-
-En otra PC, reemplazar la ruta `D:\DataDeveloper\...` por la ubicación real. Iniciar Docker Desktop y ejecutar, en orden:
-
-```powershell
-docker compose up -d
 python src\generate_data.py
-python src\validation\validate_data.py
-python src\transformations\transform_cases.py
-python src\load_to_postgres.py
-Get-Content sql\analytics\01_operational_views.sql | docker exec -i portability-postgres psql -v ON_ERROR_STOP=1 -U data_user -d portability_db
 ```
 
-Esperar a que PostgreSQL acepte conexiones antes de la carga. La carga actual **reemplaza** `portability_cases`: úsala para reconstruir o actualizar la muestra, no para conservar modificaciones manuales. Después de cargar, ejecutar otra vez el SQL de las vistas. Si PostgreSQL impide reemplazar la tabla porque existen vistas dependientes, detenerse y revisar la dependencia; no borrar el volumen ni la base para resolverlo.
-
-Verificar:
+### 5.2 Validar el lote inicial
 
 ```powershell
-docker exec portability-postgres psql -U data_user -d portability_db -c "SELECT COUNT(*) AS total, COUNT(DISTINCT case_id) AS unicos FROM portability_cases;"
-docker exec portability-postgres psql -U data_user -d portability_db -c "SELECT * FROM vw_portability_kpis;"
+python src\validation\validate_data.py
 ```
 
-## Power BI
+### 5.3 Transformar el lote inicial
 
-- Origen: **PostgreSQL database**, servidor `localhost:5432`, base `portability_db`, modo **Importar**.
-- Con el contenedor actual: usuario `data_user`; la contraseña local está configurada en `docker-compose.yml`. No poner credenciales en el repositorio público ni en capturas.
-- Seleccionar `public.portability_cases` para las tarjetas y los segmentadores de la primera página. Las cinco vistas sirven para consultar agregados, pero no se filtran entre sí sin un modelo de relaciones.
-- Si la conexión falla tras reiniciar, comprobar `docker compose ps`, el puerto `5432` y las credenciales en **Archivo → Opciones y configuración → Configuración de origen de datos**.
-- Guardar el PBIX como `dashboard/portability_operations.pbix`.
+```powershell
+python src\transformations\transform_cases.py
+```
 
-## Diagnóstico rápido
+### 5.4 Ejecutar la carga inicial
 
-| Síntoma | Comprobación / acción |
-|---|---|
-| `docker` no responde | Abrir Docker Desktop y esperar a que arranque. |
-| `portability-postgres` no está activo | `docker compose up -d`; después `docker compose ps`. |
-| `relation portability_cases does not exist` | Ejecutar generación, validación, transformación y carga en ese orden. |
-| Falta una vista | Ejecutar `01_operational_views.sql` con `ON_ERROR_STOP=1`; revisar el primer error. |
-| Power BI muestra datos antiguos | Con PostgreSQL activo, pulsar **Actualizar** en Power BI. |
-| La activación de `.venv` está bloqueada | Usar `.\.venv\Scripts\python.exe` en los comandos; no es obligatorio activar el entorno. |
+```powershell
+python src\load_to_postgres.py --mode initial
+```
 
-Para detener sin borrar los datos: `docker compose stop`. Para reiniciar: `docker compose up -d`. **No ejecutar `docker compose down -v`** salvo que realmente se quiera eliminar el volumen de la base.
+Si la tabla existe, el script utiliza `TRUNCATE` y conserva las vistas dependientes.
+
+## 6. Carga incremental
+
+### 6.1 Generar el lote
+
+```powershell
+python src\generate_incremental_data.py
+```
+
+### 6.2 Transformar el lote
+
+```powershell
+python src\transformations\transform_cases.py `
+    --input data\sample\portability_cases_incremental.csv `
+    --output data\processed\portability_cases_incremental_clean.csv
+```
+
+### 6.3 Cargar solamente registros nuevos
+
+```powershell
+python src\load_to_postgres.py `
+    --mode append `
+    --input data\processed\portability_cases_incremental_clean.csv
+```
+
+Resultado esperado tras la primera carga incremental:
+
+```text
+Registros nuevos cargados: 2500
+Registros totales en PostgreSQL: 7500
+```
+
+Al repetirla:
+
+```text
+No hay registros nuevos para cargar.
+Registros totales en PostgreSQL: 7500
+```
+
+## 7. Crear o actualizar vistas
+
+Usar siempre `-Raw -Encoding UTF8` para preservar caracteres acentuados.
+
+```powershell
+Get-Content `
+    -Path sql\analytics\01_operational_views.sql `
+    -Raw `
+    -Encoding UTF8 |
+    docker exec -i portability-postgres psql `
+    -v ON_ERROR_STOP=1 `
+    -U data_user `
+    -d portability_db
+```
+
+```powershell
+Get-Content `
+    -Path sql\analytics\02_monthly_metrics.sql `
+    -Raw `
+    -Encoding UTF8 |
+    docker exec -i portability-postgres psql `
+    -v ON_ERROR_STOP=1 `
+    -U data_user `
+    -d portability_db
+```
+
+## 8. Verificaciones SQL
+
+Total:
+
+```powershell
+docker exec -it portability-postgres psql -U data_user -d portability_db -c "SELECT COUNT(*) FROM portability_cases;"
+```
+
+KPI:
+
+```powershell
+docker exec -it portability-postgres psql -U data_user -d portability_db -c "SELECT * FROM vw_portability_kpis;"
+```
+
+Rango temporal:
+
+```powershell
+docker exec -it portability-postgres psql -U data_user -d portability_db -c "SELECT MIN(received_date), MAX(received_date) FROM portability_cases;"
+```
+
+Duplicados:
+
+```powershell
+docker exec -it portability-postgres psql -U data_user -d portability_db -c "SELECT case_id, COUNT(*) FROM portability_cases GROUP BY case_id HAVING COUNT(*) > 1;"
+```
+
+Métricas mensuales:
+
+```powershell
+docker exec -it portability-postgres psql -U data_user -d portability_db -c "SELECT * FROM vw_monthly_operational_metrics;"
+```
+
+## 9. Ejecutar pruebas
+
+PostgreSQL debe estar iniciado porque seis pruebas consultan la base.
+
+```powershell
+pytest -q
+```
+
+Resultado esperado:
+
+```text
+22 passed
+```
+
+## 10. Actualizar Power BI
+
+1. Confirmar que PostgreSQL está activo.
+2. Abrir `dashboard/portability_operations.pbix`.
+3. Seleccionar **Actualizar**.
+4. Verificar total `7500`, abiertos `3676` y cerrados `3824`.
+5. Verificar el período enero-junio de 2023.
+
+## 11. Verificar Git
+
+```powershell
+git status
+```
+
+Antes de finalizar una etapa:
+
+```powershell
+pytest -q
+git add <archivos>
+git commit -m "Descripción del cambio"
+```
+
+## 12. Detener servicios
+
+Detener contenedores sin eliminar datos:
+
+```powershell
+docker compose stop
+```
+
+Volver a iniciarlos:
+
+```powershell
+docker compose start
+```
+
+Eliminar contenedores conservando el volumen:
+
+```powershell
+docker compose down
+```
+
+No usar `docker compose down -v` salvo que se desee eliminar deliberadamente la base persistida.
+
+## Solución de problemas
+
+### PostgreSQL no responde
+
+```powershell
+docker compose ps
+docker compose logs postgres
+```
+
+### Una vista conserva una definición anterior
+
+Volver a ejecutar el archivo SQL con `-Raw -Encoding UTF8`.
+
+### La carga inicial intenta eliminar vistas
+
+Usar la versión actual de `load_to_postgres.py`, que ejecuta `TRUNCATE` en lugar de `if_exists="replace"` cuando la tabla ya existe.
+
+### Power BI muestra datos anteriores
+
+Confirmar la base, ejecutar las vistas y luego seleccionar **Actualizar** dentro de Power BI.
+

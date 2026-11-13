@@ -1,103 +1,207 @@
-# Tablero Power BI: operaciones de portabilidad
+# Dashboard de Power BI
 
-## Estado y origen
+## Objetivo
 
-La conexión a PostgreSQL ya está realizada. Falta completar las tarjetas de la página `Resumen Operativo`. Archivo de trabajo: `dashboard/portability_operations.pbix`.
+Presentar de forma interactiva el volumen, estado, SLA, demoras y evolución de los trámites sintéticos de portabilidad.
 
-Después de reiniciar la PC, seguir `docs/runbook.md`: abrir Docker Desktop, ejecutar `docker compose up -d`, confirmar que existe `portability_cases`, abrir el PBIX y pulsar **Actualizar**.
+## Fuente y modelo
 
-## Antes de crear tarjetas
+- Servidor: `localhost:5432`
+- Base: `portability_db`
+- Modo: Importar
+- Tabla principal: `public.portability_cases`
+- Tabla temporal: `Calendario`
+- Vistas SQL: utilizadas como capa de control y consulta alternativa
 
-En **Vista de datos** confirmar que `public.portability_cases` tiene 5000 filas y que `is_closed` e `is_pending` son booleanos. Si solo cargaste las cinco vistas, ir a **Inicio → Obtener datos → PostgreSQL database**, `localhost:5432`, `portability_db`, modo **Importar**, y seleccionar también `public.portability_cases`.
+La tabla base se usa para las medidas y visuales interactivos porque conserva el nivel de detalle y permite que fecha, equipo y canal filtren coherentemente el informe. Las vistas agregadas no deben relacionarse con la tabla base para evitar relaciones ambiguas y filtros inesperados.
 
-Para una página con filtros interactivos, crear tarjetas y gráficos a partir de **esa misma tabla de detalle**. Las vistas SQL agregadas sirven para comprobar totales; una tarjeta que viene de `vw_portability_kpis` no se filtra automáticamente por un segmentador de `portability_cases`.
+## Relación principal
 
-## Crear las ocho medidas
+```text
+Calendario[Date] 1 ──── * portability_cases[received_date]
+```
 
-En el panel **Datos**, clic derecho sobre `portability_cases` → **Nueva medida**. Introducir una medida por vez (si Power BI usa `;` como separador regional, cambiar las comas de los argumentos por punto y coma):
+Dirección de filtro: desde `Calendario` hacia `portability_cases`.
+
+## Tabla calendario
+
+La tabla contiene fecha, año, mes, año-mes, día y día de la semana. El campo utilizado en los ejes mensuales debe ser de tipo fecha o estar ordenado por una columna numérica `YYYYMM`.
+
+## Medidas principales
 
 ```dax
-Total trámites = DISTINCTCOUNT(portability_cases[case_id])
+Total trámites =
+DISTINCTCOUNT(portability_cases[case_id])
 ```
 
 ```dax
-Casos abiertos = CALCULATE([Total trámites], portability_cases[is_pending] = TRUE())
+Casos abiertos =
+CALCULATE(
+    [Total trámites],
+    KEEPFILTERS(portability_cases[is_pending] = TRUE())
+)
 ```
 
 ```dax
-Casos cerrados = CALCULATE([Total trámites], portability_cases[is_closed] = TRUE())
+Casos cerrados =
+CALCULATE(
+    [Total trámites],
+    KEEPFILTERS(portability_cases[is_closed] = TRUE())
+)
 ```
 
 ```dax
-Aprobados = CALCULATE([Total trámites], portability_cases[status] = "Aprobado")
+Dentro de SLA =
+CALCULATE(
+    [Total trámites],
+    KEEPFILTERS(portability_cases[sla_status] = "Dentro de SLA")
+)
 ```
 
 ```dax
-Rechazados = CALCULATE([Total trámites], portability_cases[status] = "Rechazado")
+Fuera de SLA =
+CALCULATE(
+    [Total trámites],
+    KEEPFILTERS(portability_cases[sla_status] = "Fuera de SLA")
+)
 ```
 
 ```dax
-Anulados = CALCULATE([Total trámites], portability_cases[status] = "Anulado")
+Cumplimiento SLA % =
+DIVIDE(
+    [Dentro de SLA],
+    [Dentro de SLA] + [Fuera de SLA]
+)
 ```
 
 ```dax
-Dentro de SLA = CALCULATE([Total trámites], portability_cases[sla_status] = "Dentro de SLA")
+Tiempo promedio de resolución =
+AVERAGE(portability_cases[resolution_hours])
 ```
 
-```dax
-Fuera de SLA = CALCULATE([Total trámites], portability_cases[sla_status] = "Fuera de SLA")
-```
+## Página 1: Resumen Operativo
 
-Medida opcional para el porcentaje de cumplimiento:
+### Tarjetas
 
-```dax
-Cumplimiento SLA % = DIVIDE([Dentro de SLA], [Dentro de SLA] + [Fuera de SLA])
-```
+- Total de trámites
+- Casos abiertos
+- Casos cerrados
+- Aprobados
+- Rechazados
+- Anulados
+- Dentro de SLA
+- Fuera de SLA
+- Cumplimiento de SLA
 
-Seleccionar esta última medida y establecer **Formato → Porcentaje**, con uno o dos decimales.
+### Visuales
 
-## Colocar las tarjetas
+- Trámites por estado
+- Evolución por fecha de recepción
+- Volumen por equipo
+- Fuera de SLA por equipo
+- Fuera de SLA por canal
 
-1. Crear o renombrar una página como `Resumen Operativo`.
-2. En **Visualizaciones**, insertar **Tarjeta**. Arrastrar `Total trámites` al campo **Datos/Valores** de la tarjeta (el nombre varía según la versión de Power BI).
-3. Duplicar la tarjeta siete veces con copiar/pegar y reemplazar la medida de cada copia por: `Casos abiertos`, `Casos cerrados`, `Aprobados`, `Rechazados`, `Anulados`, `Dentro de SLA` y `Fuera de SLA`.
-4. Orden sugerido: primera fila Total, Abiertos, Cerrados, Aprobados; segunda fila Rechazados, Anulados, Dentro de SLA, Fuera de SLA. Activar **Título** en formato y usar nombres cortos.
+### Segmentadores
 
-Con la muestra actual, **sin filtros**, los valores esperados son:
+- Fecha de calendario
+- Equipo
+- Canal
 
-| Tarjeta | Valor |
+## Página 2: Análisis de demoras
+
+### Tarjetas
+
+- Tiempo promedio de resolución
+- Tiempo mediano de resolución
+- Casos fuera de SLA %
+- Porcentaje de rechazos
+- Porcentaje de anulaciones
+
+### Visuales
+
+- Rechazos por motivo
+- Anulaciones por motivo
+- Tiempo promedio de resolución por equipo
+
+Las medidas deben usar `portability_cases` y no las vistas agregadas para conservar el contexto de filtro.
+
+## Página 3: Evolución Mensual
+
+### Tarjetas generales
+
+- Total
+- Abiertos
+- Cerrados
+- Cumplimiento de SLA
+- Tiempo promedio de resolución
+
+### Visuales
+
+- Total por mes: línea
+- Abiertos y cerrados por mes: dos líneas
+- SLA mensual: línea
+- Estados por mes: columnas agrupadas o apiladas normales
+
+No utilizar columnas 100 % apiladas si el título comunica volumen total. Ese visual muestra composición porcentual.
+
+## Comparación trimestral
+
+Períodos:
+
+- T1: enero-marzo de 2023
+- T2: abril-junio de 2023
+
+Medidas implementadas:
+
+- Trámites T1
+- Trámites T2
+- Variación de trámites %
+- SLA T1
+- SLA T2
+- Variación de SLA en puntos porcentuales
+
+Se utiliza una tabla desconectada `PeriodosComparacion` con los valores `T1` y `T2` para alimentar los ejes de los gráficos comparativos.
+
+No conviene mezclar cantidad de trámites y porcentaje de SLA en el mismo eje debido a sus escalas diferentes.
+
+## Resultados de referencia
+
+| Indicador | Valor |
 |---|---:|
-| Total trámites | 5000 |
-| Casos abiertos | 2430 |
-| Casos cerrados | 2570 |
-| Aprobados | 1652 |
-| Rechazados | 610 |
-| Anulados | 308 |
-| Dentro de SLA | 1953 |
-| Fuera de SLA | 617 |
+| Total | 7.500 |
+| Abiertos | 3.676 |
+| Cerrados | 3.824 |
+| Aprobados | 2.464 |
+| Rechazados | 889 |
+| Anulados | 471 |
+| Dentro de SLA | 2.927 |
+| Fuera de SLA | 897 |
+| Cumplimiento SLA | 76,54 % |
+| Promedio de resolución | 36,08 horas |
 
-Controles rápidos: Total = Abiertos + Cerrados; Cerrados = Aprobados + Rechazados + Anulados; Cerrados = Dentro de SLA + Fuera de SLA. La muestra no representa métricas de Telecom.
+## Actualización
 
-## Gráficos y filtros de la misma página
+1. Iniciar PostgreSQL.
+2. Cargar los datasets.
+3. Crear las vistas.
+4. Abrir el PBIX.
+5. Seleccionar **Actualizar**.
+6. Verificar las credenciales si se utiliza otra computadora.
 
-Usar `portability_cases` para que los segmentadores afecten también a las tarjetas:
+## Validaciones funcionales
 
-| Visual | Eje / categoría | Valor |
-|---|---|---|
-| Barras: casos por estado | `status` | `Total trámites` |
-| Línea: ingresos diarios | `received_date` | `Total trámites` |
-| Barras: carga por equipo | `team` | `Total trámites` |
-| Barras: fuera de SLA por canal | `channel` | `Fuera de SLA` |
+- Abiertos + cerrados = total.
+- Dentro de SLA + fuera de SLA = cerrados con resolución.
+- Los segmentadores afectan tarjetas y gráficos.
+- Año-mes aparece en orden cronológico.
+- Las medidas trimestrales ignoran el filtro mensual cuando usan `REMOVEFILTERS(Calendario)`.
+- Los KPI principales coinciden con PostgreSQL.
 
-Segmentadores: `received_date`, `team`, `channel`. Si se añade `status`, al seleccionar Aprobado las demás tarjetas mostrarán cero: ese comportamiento es esperable. Para ver la fecha como eje continuo, comprobar que `received_date` sea de tipo **Fecha**. No usar `received_month_name` aislado para ordenar meses; ordenarlo por `received_month` o usar una tabla calendario más adelante.
+## Pendientes visuales opcionales
 
-**Importante:** la línea por `received_date` muestra trámites **recibidos** cada día; no muestra cierres diarios. En el modelo actual no hay historial de cambios de estado.
+- Uniformar paleta y tipografía.
+- Ajustar títulos y nombres técnicos.
+- Incorporar tooltips.
+- Agregar navegación entre páginas.
+- Exportar capturas para el README.
 
-## Prueba final
-
-1. Sin filtros, comparar las ocho tarjetas con la tabla anterior.
-2. Seleccionar un equipo: deben cambiar el total y las tarjetas relacionadas.
-3. Quitar la selección: deben volver los valores generales.
-4. Guardar con **Archivo → Guardar como** en `dashboard/portability_operations.pbix`.
-
-Si una tarjeta no responde a un segmentador, revisar que ambos usan `portability_cases` y, en **Formato → Editar interacciones**, que el segmentador tiene activada la opción de filtrar esa tarjeta.

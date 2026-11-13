@@ -3,12 +3,7 @@ CREATE OR REPLACE VIEW vw_portability_kpis AS
 SELECT
     COUNT(*) AS total_cases,
     COUNT(*) FILTER (
-        WHERE status IN (
-            'Recibido',
-            'En análisis',
-            'Pendiente documentación',
-            'Pendiente contacto'
-        )
+        WHERE is_pending = true
     ) AS open_cases,
     COUNT(*) FILTER (
         WHERE status IN ('Aprobado', 'Rechazado', 'Anulado')

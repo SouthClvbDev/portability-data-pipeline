@@ -109,6 +109,16 @@ Construir un pipeline reproducible con datos **sintéticos** de trámites de por
 - La página `Resumen Operativo` reúne tarjetas de volumen y estado, evolución por fecha de recepción, análisis por equipo y SLA por canal.
 - El archivo PBIX se guarda dentro de `dashboard/` para acompañar el proyecto.
 - Al actualizar en otra computadora, primero se debe levantar PostgreSQL, recargar la tabla y recrear las vistas; luego se actualizan las credenciales y la conexión local de Power BI si hace falta.
+- Se conectó Power BI con PostgreSQL.
+- Se creó la página `Resumen Operativo`.
+- Se creó la página `Análisis de demoras`.
+- Se agregaron tarjetas de volumen, estados y SLA.
+- Se agregaron gráficos por estado, fecha, equipo, canal, motivos de rechazo y motivos de anulación.
+- Se agregaron segmentadores de fecha, equipo y canal.
+- Se creó una tabla `Calendario` relacionada con `portability_cases`.
+- Se corrigieron las medidas para que usen la tabla base y respondan correctamente a los filtros.
+- Se validaron los principales resultados contra PostgreSQL.
+
 
 ## Ejecución desde la raíz del proyecto (PowerShell)
 

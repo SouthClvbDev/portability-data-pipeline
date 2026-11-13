@@ -32,6 +32,13 @@ OPEN_STATUSES = {
     "Pendiente contacto",
 }
 
+INCREMENTAL_FILE = (
+    BASE_DIR
+    / "data"
+    / "sample"
+    / "portability_cases_incremental.csv"
+)
+
 VALID_STATUSES = FINAL_STATUSES | OPEN_STATUSES
 
 
@@ -177,3 +184,66 @@ def test_sla_rules_are_consistent():
     assert within_sla.empty
     assert outside_sla.empty
     assert no_sla.empty
+
+def load_incremental_data():
+    if not INCREMENTAL_FILE.exists():
+        raise FileNotFoundError(
+            f"No existe el archivo incremental: {INCREMENTAL_FILE}"
+        )
+
+    df = pd.read_csv(INCREMENTAL_FILE)
+
+    df["received_at"] = pd.to_datetime(df["received_at"])
+    df["closed_at"] = pd.to_datetime(df["closed_at"])
+
+    return df
+
+
+def test_incremental_file_has_2500_records():
+    df = load_incremental_data()
+
+    assert len(df) == 2500
+
+
+def test_incremental_ids_are_in_expected_range():
+    df = load_incremental_data()
+
+    numeric_ids = (
+        df["case_id"]
+        .str.replace("PORT-", "", regex=False)
+        .astype(int)
+    )
+
+    assert numeric_ids.min() == 5001
+    assert numeric_ids.max() == 7500
+
+
+def test_incremental_ids_are_unique():
+    df = load_incremental_data()
+
+    assert df["case_id"].is_unique
+    assert df["case_id"].notna().all()
+
+
+def test_incremental_dates_are_in_expected_period():
+    df = load_incremental_data()
+
+    assert df["received_at"].min() >= pd.Timestamp("2023-04-01")
+    assert df["received_at"].max() <= pd.Timestamp("2023-06-30 23:59:59")
+
+
+def test_incremental_has_same_columns_as_sample():
+    sample_df = load_sample_data()
+    incremental_df = load_incremental_data()
+
+    assert set(sample_df.columns) == set(incremental_df.columns)
+
+
+def test_sample_and_incremental_ids_do_not_overlap():
+    sample_df = load_sample_data()
+    incremental_df = load_incremental_data()
+
+    sample_ids = set(sample_df["case_id"])
+    incremental_ids = set(incremental_df["case_id"])
+
+    assert sample_ids.isdisjoint(incremental_ids)

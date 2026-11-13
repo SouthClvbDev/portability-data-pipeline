@@ -3,7 +3,12 @@ __pycache__/
 *.pyc
 .env
 .ipynb_checkpoints/
+
 data/raw/*
 data/processed/*
-.env
+
 *.sqlitedb
+*.pbit.lock
+~$*.pbix
+Thumbs.db
+.DS_Store

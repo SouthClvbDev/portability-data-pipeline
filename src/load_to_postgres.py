@@ -1,4 +1,5 @@
 from pathlib import Path
+import argparse
 import os
 
 import pandas as pd
@@ -26,7 +27,7 @@ DATABASE_URL = (
 )
 
 
-def main():
+def load_dataframe() -> pd.DataFrame:
     if not INPUT_FILE.exists():
         raise FileNotFoundError(
             f"No existe el archivo transformado: {INPUT_FILE}"
@@ -37,6 +38,16 @@ def main():
 
     print(f"Registros leídos: {len(df)}")
 
+    if "case_id" not in df.columns:
+        raise ValueError("El archivo no contiene la columna case_id.")
+
+    if df["case_id"].duplicated().any():
+        raise ValueError("El archivo contiene case_id duplicados.")
+
+    return df
+
+
+def create_database_engine():
     engine = create_engine(DATABASE_URL)
 
     with engine.begin() as connection:
@@ -44,22 +55,119 @@ def main():
 
     print("Conexión a PostgreSQL exitosa.")
 
+    return engine
+
+
+def load_initial(df: pd.DataFrame, engine) -> None:
+    with engine.begin() as connection:
+        table_exists = connection.execute(
+            text(
+                """
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM information_schema.tables
+                    WHERE table_schema = 'public'
+                      AND table_name = 'portability_cases'
+                )
+                """
+            )
+        ).scalar()
+
+        if table_exists:
+            connection.execute(
+                text("TRUNCATE TABLE public.portability_cases")
+            )
+            print("Tabla existente vaciada correctamente.")
+
     df.to_sql(
         "portability_cases",
         con=engine,
-        if_exists="replace",
+        if_exists="append" if table_exists else "replace",
         index=False,
         schema="public",
     )
 
-    print("Tabla portability_cases cargada correctamente.")
+    print("Carga inicial completada.")
 
+
+def load_incremental(df: pd.DataFrame, engine) -> None:
     with engine.connect() as connection:
-        total_records = connection.execute(
-            text("SELECT COUNT(*) FROM portability_cases")
+        table_exists = connection.execute(
+            text(
+                """
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM information_schema.tables
+                    WHERE table_schema = 'public'
+                      AND table_name = 'portability_cases'
+                )
+                """
+            )
         ).scalar()
 
-    print(f"Registros en PostgreSQL: {total_records}")
+        if not table_exists:
+            raise RuntimeError(
+                "La tabla portability_cases no existe. "
+                "Ejecutá primero una carga inicial."
+            )
+
+        existing_ids = pd.read_sql(
+            text("SELECT case_id FROM public.portability_cases"),
+            connection,
+        )
+
+    existing_case_ids = set(existing_ids["case_id"])
+
+    new_rows = df[~df["case_id"].isin(existing_case_ids)].copy()
+
+    if new_rows.empty:
+        print("No hay registros nuevos para cargar.")
+        return
+
+    new_rows.to_sql(
+        "portability_cases",
+        con=engine,
+        if_exists="append",
+        index=False,
+        schema="public",
+    )
+
+    print(f"Registros nuevos cargados: {len(new_rows)}")
+    print(f"Registros ignorados por estar repetidos: {len(df) - len(new_rows)}")
+
+
+def show_total_records(engine) -> None:
+    with engine.connect() as connection:
+        total_records = connection.execute(
+            text("SELECT COUNT(*) FROM public.portability_cases")
+        ).scalar()
+
+    print(f"Registros totales en PostgreSQL: {total_records}")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Carga datos de portabilidad en PostgreSQL."
+    )
+
+    parser.add_argument(
+        "--mode",
+        choices=["initial", "append"],
+        default="initial",
+        help="initial reemplaza la tabla. append agrega solo registros nuevos.",
+    )
+
+    args = parser.parse_args()
+
+    df = load_dataframe()
+    engine = create_database_engine()
+
+    if args.mode == "initial":
+        load_initial(df, engine)
+    else:
+        load_incremental(df, engine)
+
+    show_total_records(engine)
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ SELECT
         WHERE is_pending = true
     ) AS open_cases,
     COUNT(*) FILTER (
-        WHERE status IN ('Aprobado', 'Rechazado', 'Anulado')
+        WHERE is_closed = true
     ) AS closed_cases,
     COUNT(*) FILTER (
         WHERE status = 'Aprobado'

@@ -8,7 +8,7 @@ from sqlalchemy import create_engine, text
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 
-INPUT_FILE = (
+DEFAULT_INPUT_FILE = (
     BASE_DIR
     / "data"
     / "processed"
@@ -27,14 +27,14 @@ DATABASE_URL = (
 )
 
 
-def load_dataframe() -> pd.DataFrame:
-    if not INPUT_FILE.exists():
+def load_dataframe(input_file: Path) -> pd.DataFrame:
+    if not input_file.exists():
         raise FileNotFoundError(
-            f"No existe el archivo transformado: {INPUT_FILE}"
+            f"No existe el archivo transformado: {input_file}"
         )
 
-    print("Leyendo archivo transformado...")
-    df = pd.read_csv(INPUT_FILE)
+    print(f"Leyendo archivo transformado: {input_file}")
+    df = pd.read_csv(input_file)
 
     print(f"Registros leídos: {len(df)}")
 
@@ -118,7 +118,9 @@ def load_incremental(df: pd.DataFrame, engine) -> None:
 
     existing_case_ids = set(existing_ids["case_id"])
 
-    new_rows = df[~df["case_id"].isin(existing_case_ids)].copy()
+    new_rows = df[
+        ~df["case_id"].isin(existing_case_ids)
+    ].copy()
 
     if new_rows.empty:
         print("No hay registros nuevos para cargar.")
@@ -133,7 +135,10 @@ def load_incremental(df: pd.DataFrame, engine) -> None:
     )
 
     print(f"Registros nuevos cargados: {len(new_rows)}")
-    print(f"Registros ignorados por estar repetidos: {len(df) - len(new_rows)}")
+    print(
+        "Registros ignorados por estar repetidos: "
+        f"{len(df) - len(new_rows)}"
+    )
 
 
 def show_total_records(engine) -> None:
@@ -154,12 +159,22 @@ def main():
         "--mode",
         choices=["initial", "append"],
         default="initial",
-        help="initial reemplaza la tabla. append agrega solo registros nuevos.",
+        help=(
+            "initial reemplaza los datos. "
+            "append agrega solo registros nuevos."
+        ),
+    )
+
+    parser.add_argument(
+        "--input",
+        type=Path,
+        default=DEFAULT_INPUT_FILE,
+        help="Archivo CSV procesado que se desea cargar.",
     )
 
     args = parser.parse_args()
 
-    df = load_dataframe()
+    df = load_dataframe(args.input)
     engine = create_database_engine()
 
     if args.mode == "initial":

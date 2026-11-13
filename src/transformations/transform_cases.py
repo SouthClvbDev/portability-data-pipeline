@@ -1,18 +1,19 @@
 from pathlib import Path
+import argparse
 
 import pandas as pd
 
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
-INPUT_FILE = (
+DEFAULT_INPUT_FILE = (
     BASE_DIR
     / "data"
     / "sample"
     / "portability_cases.csv"
 )
 
-OUTPUT_FILE = (
+DEFAULT_OUTPUT_FILE = (
     BASE_DIR
     / "data"
     / "processed"
@@ -26,8 +27,13 @@ FINAL_STATUSES = {
 }
 
 
-def main():
-    df = pd.read_csv(INPUT_FILE)
+def transform_file(input_file: Path, output_file: Path) -> None:
+    if not input_file.exists():
+        raise FileNotFoundError(
+            f"No existe el archivo de entrada: {input_file}"
+        )
+
+    df = pd.read_csv(input_file)
 
     df["received_at"] = pd.to_datetime(df["received_at"])
     df["closed_at"] = pd.to_datetime(df["closed_at"])
@@ -66,7 +72,6 @@ def main():
         "sla_status",
     ] = "Fuera de SLA"
 
-    # Orden de columnas más útil para el análisis
     ordered_columns = [
         "case_id",
         "received_at",
@@ -93,19 +98,46 @@ def main():
 
     df = df[ordered_columns]
 
-    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    output_file.parent.mkdir(parents=True, exist_ok=True)
 
     df.to_csv(
-        OUTPUT_FILE,
+        output_file,
         index=False,
         encoding="utf-8-sig",
     )
 
-    print(f"Archivo transformado correctamente: {OUTPUT_FILE}")
+    print(f"Archivo transformado correctamente: {output_file}")
     print(f"Registros procesados: {len(df)}")
     print(f"Columnas finales: {len(df.columns)}")
     print("\nDistribución de SLA:")
     print(df["sla_status"].value_counts())
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Transforma datos de trámites de portabilidad."
+    )
+
+    parser.add_argument(
+        "--input",
+        type=Path,
+        default=DEFAULT_INPUT_FILE,
+        help="Archivo CSV de entrada.",
+    )
+
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=DEFAULT_OUTPUT_FILE,
+        help="Archivo CSV de salida.",
+    )
+
+    args = parser.parse_args()
+
+    transform_file(
+        input_file=args.input,
+        output_file=args.output,
+    )
 
 
 if __name__ == "__main__":

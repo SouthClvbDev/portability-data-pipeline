@@ -1,0 +1,38 @@
+[
+  {
+    "title": "Datos de muestra",
+    "question": "¿Cómo representar un proceso operativo sin exponer datos reales?",
+    "result": "Un generador reproducible crea casos sintéticos con fechas, estados, equipos y canales.",
+    "evidence": "src/generate_data.py"
+  },
+  {
+    "title": "Calidad y transformación",
+    "question": "¿Cómo evitar indicadores calculados sobre registros incoherentes?",
+    "result": "Las reglas validan estados y fechas; la transformación deja campos listos para el análisis.",
+    "evidence": "src/validation/validate_data.py"
+  },
+  {
+    "title": "Carga incremental",
+    "question": "¿Qué ocurre cuando llega otro lote de casos?",
+    "result": "PostgreSQL conserva identificadores únicos y permite repetir la carga sin duplicar registros.",
+    "evidence": "src/load_to_postgres.py"
+  },
+  {
+    "title": "Métricas operativas",
+    "question": "¿Cómo convertir filas en preguntas útiles?",
+    "result": "Las vistas SQL reúnen volumen, estados, equipos, canales y SLA con definiciones explícitas.",
+    "evidence": "sql/analytics/01_operational_views.sql"
+  },
+  {
+    "title": "Portfolio y asistente",
+    "question": "¿Cómo mostrar el resultado sin pedir que instalen el proyecto?",
+    "result": "La web presenta escenarios guiados y el asistente calcula respuestas verificables sobre la muestra.",
+    "evidence": "web/lib/query.mjs"
+  },
+  {
+    "title": "Historia observable",
+    "question": "¿Cuántos casos seguían abiertos al cierre de un día?",
+    "result": "Las fechas de recepción y cierre permiten seguir el backlog diario sin atribuir estados intermedios inventados.",
+    "evidence": "sql/analytics/03_observable_history.sql"
+  }
+]

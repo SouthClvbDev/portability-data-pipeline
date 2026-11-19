@@ -14,20 +14,24 @@ El portfolio ya permite recorrer cuatro preguntas operativas con cifras calculad
 
 ## Escenario B — Historia y backlog a fecha de corte
 
-**Situación:** un analista pregunta cuántos casos estaban abiertos en una fecha pasada. La instantánea actual no puede contestarlo.
+**Situación:** un analista pregunta cuántos casos estaban abiertos en una fecha pasada. Las fechas de recepción y cierre permiten responder al cierre del día, pero no muestran las etapas intermedias.
 
-**Desarrollo:** generar eventos sintéticos de cambio de estado con marca temporal, clave del caso y estado anterior/nuevo. Crear una tabla de eventos y una consulta de estado a fecha de corte; definir qué pasa con anulaciones y reaperturas. Incorporar pruebas de secuencia y de conservación del total.
+**Avance realizado:** `vw_case_observed_events`, `vw_daily_backlog`, gráfico diario y respuesta del bot a una fecha de corte. Solo se usan las marcas de recepción y cierre presentes en los CSV.
 
-**Terminado cuando:** una fecha de corte reproduce un backlog verificable, la vista diaria distingue ingresos de cierres reales y el bot responde esas preguntas usando eventos, no el estado actual.
+**Siguiente desarrollo:** registrar cambios entre estados abiertos con marca temporal, clave del caso y estado anterior/nuevo desde una fuente que realmente conserve esas transiciones. Definir reaperturas y agregar pruebas de secuencia.
+
+**Terminado cuando:** se pueden responder también preguntas por estado intermedio y duración por etapa sin inferir marcas que no existen.
 
 ## Escenario C — Consultas más flexibles con costo controlado
 
 **Situación:** una persona plantea una pregunta con sinónimos o varias condiciones que las reglas locales no reconocen.
 
-**Desarrollo:** activar la interpretación opcional con Gemini u OpenAI, medir errores de interpretación y agregar una cuota global compartida y observabilidad antes de abrir el modo IA a visitantes. Ampliar el catálogo de métricas solo cuando haya definición y datos para probarlas. No permitir SQL libre ni respuestas numéricas redactadas por el modelo.
+**Avance realizado:** interpretación opcional con Gemini u OpenAI, validación de filtros y cuota compartida atómica con Redis REST cuando se configuran sus credenciales. El modo sin IA permanece disponible.
 
-**Terminado cuando:** preguntas equivalentes producen la misma consulta estructurada, filtros inventados se rechazan, los conteos coinciden con el dataset y existe un techo de uso comprobable entre instancias de Vercel.
+**Siguiente desarrollo:** configurar Redis y la clave del proveedor en Vercel, probar la cuota entre instancias, medir errores de interpretación y observar uso/costo real. Ampliar métricas solo con definiciones verificables. No permitir SQL libre ni cifras redactadas por el modelo.
+
+**Terminado cuando:** preguntas equivalentes producen la misma consulta estructurada, filtros inventados se rechazan, los conteos coinciden con el dataset y se comprobó el techo de uso en el despliegue real.
 
 ## Orden sugerido
 
-Primero cerrar **A** para fortalecer la evidencia visual del portfolio; después **B** para demostrar modelado temporal y resolver una limitación real. **C** puede avanzar en paralelo como experimento, pero su apertura pública depende del control de cuota global. La sección de escenarios web seguirá creciendo cuando se incorporen datos y preguntas verificables; sus gráficos se regeneran en cada despliegue desde los CSV.
+La historia observable de **B** y un recorrido progresivo de la web ya avanzaron sin editar el PBIX. El rediseño y las capturas reales de **A** quedan a cargo de la edición en Power BI Desktop. El código de cuota global de **C** ya está preparado; falta configurarlo y verificarlo en Vercel antes de abrir la IA públicamente. Las cifras web se regeneran en cada despliegue desde los CSV.

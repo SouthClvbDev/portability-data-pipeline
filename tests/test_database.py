@@ -135,7 +135,9 @@ def test_expected_analytics_views_exist(engine):
               'vw_daily_volume',
               'vw_team_performance',
               'vw_sla_by_channel',
-              'vw_monthly_operational_metrics'
+              'vw_monthly_operational_metrics',
+              'vw_case_observed_events',
+              'vw_daily_backlog'
           )
         """
     )
@@ -153,6 +155,36 @@ def test_expected_analytics_views_exist(engine):
         "vw_team_performance",
         "vw_sla_by_channel",
         "vw_monthly_operational_metrics",
+        "vw_case_observed_events",
+        "vw_daily_backlog",
     }
 
     assert views == expected_views
+
+
+def test_observed_history_reconciles_with_snapshot(engine):
+    with engine.connect() as connection:
+        result = connection.execute(text("""
+            SELECT
+              (SELECT count(*) FROM public.vw_case_observed_events WHERE event_type = 'received') AS receipts,
+              (SELECT count(*) FROM public.vw_case_observed_events WHERE event_type = 'closed') AS closures,
+              (SELECT open_cases_eod FROM public.vw_daily_backlog ORDER BY day DESC LIMIT 1) AS final_open,
+              (SELECT count(*) FROM public.portability_cases) AS total,
+              (SELECT count(*) FROM public.portability_cases WHERE is_closed) AS closed,
+              (SELECT count(*) FROM public.portability_cases WHERE is_pending) AS open
+        """)).mappings().one()
+    assert result['receipts'] == result['total']
+    assert result['closures'] == result['closed']
+    assert result['final_open'] == result['open']
+
+
+def test_daily_backlog_matches_case_dates_at_cutoff(engine):
+    with engine.connect() as connection:
+        result = connection.execute(text("""
+            SELECT
+              (SELECT open_cases_eod FROM public.vw_daily_backlog WHERE day = DATE '2023-05-31') AS from_view,
+              (SELECT count(*) FROM public.portability_cases
+               WHERE received_at::timestamp < TIMESTAMP '2023-06-01'
+                 AND (closed_at IS NULL OR closed_at::timestamp >= TIMESTAMP '2023-06-01')) AS from_cases
+        """)).mappings().one()
+    assert result['from_view'] == result['from_cases']

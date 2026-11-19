@@ -6,11 +6,11 @@ Esta web muestra cómo se construye y evoluciona el pipeline de portabilidad. La
 
 1. Una introducción al problema operativo y al objetivo del proyecto.
 2. Cinco etapas del flujo: generación, validación, transformación, carga y exploración.
-3. Indicadores de la muestra versionada: total, abiertos, cerrados, SLA, volumen mensual y estados.
+3. Indicadores de la muestra versionada: total, abiertos, cerrados, SLA, volumen mensual y estados. Un gráfico permite seleccionar una fecha y ver el backlog al cierre del día.
 4. Cuatro escenarios guiados: volumen por mes, pendientes por equipo, SLA por canal y rechazos por equipo en mayo. Permiten llevar la misma pregunta al asistente.
 5. Una galería de las tres páginas del Power BI, con capturas reales cuando estén disponibles y un estado pendiente explícito cuando falten.
-6. Un asistente para preguntas sobre las métricas disponibles.
-7. El estado actual del proyecto y las próximas mejoras, con enlace al repositorio.
+6. Un asistente para preguntas sobre las métricas disponibles, incluido backlog a una fecha.
+7. Un recorrido progresivo por seis etapas del proyecto, cada una con enlace a su evidencia en el repositorio.
 
 El sitio está hecho con HTML, CSS y JavaScript sin un framework de interfaz. La aplicación de datos principal sigue en Python y PostgreSQL; Vercel aloja una presentación derivada de los CSV, no ejecuta el pipeline completo.
 
@@ -19,7 +19,7 @@ El sitio está hecho con HTML, CSS y JavaScript sin un framework de interfaz. La
 ```mermaid
 flowchart LR
     A[CSV sintéticos versionados] --> B[build-data.mjs]
-    B --> C[summary.json público]
+    B --> C[summary, scenarios e history públicos]
     B --> R[records.json privado en la función]
     C --> D[Gráficos y tarjetas en el navegador]
     R --> E[Función /api/chat]
@@ -28,9 +28,13 @@ flowchart LR
     G --> F
 ```
 
-[`scripts/build-data.mjs`](scripts/build-data.mjs) lee los dos CSV de `../data/sample` y calcula totales por estado, canal, equipo y mes. También calcula abiertos, cerrados y el SLA sintético de 48 horas entre los casos cerrados. Escribe `public/data/summary.json` para la página, `public/data/scenarios.json` para la demo y `data/records.json` con los campos necesarios para consultas combinadas. Los tres se generan durante el build y se excluyen de Git; el último se empaqueta en la función, no se publica como archivo estático.
+[`scripts/build-data.mjs`](scripts/build-data.mjs) lee los dos CSV de `../data/sample` y calcula totales por estado, canal, equipo y mes. También calcula abiertos, cerrados y el SLA sintético de 48 horas entre los casos cerrados. Escribe `public/data/summary.json`, `public/data/scenarios.json` y `public/data/history.json` para la página; `data/records.json` conserva los campos necesarios para consultas del chat. Los cuatro se generan durante el build y se excluyen de Git; el último se empaqueta en la función, no se publica como archivo estático.
 
-[`public/app.js`](public/app.js) carga esos JSON y dibuja las tarjetas, gráficos y escenarios. Los escenarios se definen en [`lib/scenarios.mjs`](lib/scenarios.mjs) y se calculan con el mismo motor de consultas del chat; sus cifras no están escritas a mano en la interfaz. La web muestra una **instantánea de cada despliegue**: si cambian los CSV, hay que construir y desplegar nuevamente. Los hitos de la sección «Proyecto vivo» son texto editorial en `public/index.html`; se actualizan manualmente cuando el proyecto avanza. El [plan de siguientes escenarios](../docs/next_scenarios.md) fija los criterios de evolución. No hay sincronización en tiempo real con PostgreSQL ni con el PBIX.
+[`public/app.js`](public/app.js) carga esos JSON y dibuja las tarjetas, gráficos, escenarios y serie diaria. Los escenarios se definen en [`lib/scenarios.mjs`](lib/scenarios.mjs) y se calculan con el mismo motor de consultas del chat; sus cifras no están escritas a mano en la interfaz. El recorrido de «Proyecto vivo» se edita en [`public/data/timeline.json`](public/data/timeline.json): cada etapa describe un resultado y enlaza código comprobable. La web muestra una **instantánea de cada despliegue**: si cambian los CSV, hay que construir y desplegar nuevamente. El [plan de siguientes escenarios](../docs/next_scenarios.md) fija los criterios de evolución. No hay sincronización en tiempo real con PostgreSQL ni con el PBIX.
+
+### Backlog a fecha de corte
+
+[`lib/history.mjs`](lib/history.mjs) usa únicamente `received_at` y `closed_at`. Al final de un día, cuenta casos recibidos hasta esa fecha que aún no habían cerrado. La serie diaria, la vista SQL y el asistente comparten esa definición. Los cierres posteriores a la última recepción explican por qué el backlog al 30 de junio puede diferir de la instantánea final. No se conocen cambios entre estados abiertos ni reaperturas; ver [definición y límites](../docs/observable_history.md).
 
 ### Galería del informe Power BI
 
@@ -46,7 +50,7 @@ El navegador envía `POST /api/chat` con una pregunta de hasta 300 caracteres y 
 
 La función [`api/chat.mjs`](api/chat.mjs) lee los registros proyectados. [`lib/query.mjs`](lib/query.mjs) traduce preguntas frecuentes a una métrica, una agrupación y filtros por estado, mes, canal o equipo. El servidor filtra y calcula el resultado; en modo `dataset` no llama a ningún modelo y no tiene costo de tokens. Para SLA usa solo casos resueltos como denominador. También calcula promedios de horas de resolución.
 
-Puede combinar filtros, por ejemplo rechazos por equipo en mayo, sin ejecutar SQL enviado por visitantes. No interpreta todavía todas las formulaciones posibles. Las preguntas sobre causas o motivos, medianas y backlog histórico se rechazan porque faltan datos o una definición analítica adecuada.
+Puede combinar filtros, por ejemplo rechazos por equipo en mayo, sin ejecutar SQL enviado por visitantes. Para backlog acepta una fecha ISO completa dentro del período observado, por ejemplo «backlog al 2023-05-31», y filtros por equipo o canal. No interpreta todavía todas las formulaciones posibles. Las preguntas sobre causas, medianas, estados intermedios o reaperturas se rechazan porque faltan datos o una definición analítica adecuada.
 
 ### Modo LLM opcional
 
@@ -54,13 +58,16 @@ Si la persona marca la casilla de IA **y** existe `GEMINI_API_KEY` o `OPENAI_API
 
 El modelo devuelve únicamente una especificación de métrica, agrupación y filtros. El servidor valida sus valores contra el dataset y calcula la respuesta numérica. Si la interpretación falla, usa las reglas locales. Esto evita que la redacción de la IA invente cifras, aunque todavía puede interpretar mal la intención. El modo sin IA sigue siendo el predeterminado.
 
-Existe un límite de **10 intentos de IA por IP y hora por instancia de función**. Es una protección básica: en serverless varias instancias o reinicios no comparten ese contador. Para una cuota global y control de costos en un sitio público se necesita un almacenamiento compartido o el control de cuota del proveedor. También se recomienda un presupuesto o límite duro de gasto y revisar logs de la función.
+Sin almacenamiento compartido, existe un límite básico de **10 intentos de IA por IP y hora por instancia de función**. En serverless varias instancias o reinicios no comparten ese contador. Si se configuran `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN`, una operación atómica en Redis aplica además **30 interpretaciones por hora para todo el sitio** y **10 por visitante y hora**, incluso entre instancias. La clave del visitante se deriva de un hash de la IP; no se guarda la IP en claro en Redis. Si Redis falla o solo está configurada una de las dos variables, el modo IA usa la respuesta determinista y no llama al modelo. El modo `dataset` nunca depende de Redis.
+
+La cuota de aplicación limita llamadas, pero no sustituye un presupuesto o límite de gasto del proveedor. Las cuotas gratuitas y condiciones de Upstash o del proveedor del modelo pueden cambiar; verificar el plan antes de habilitarlos.
 
 ### Ejemplos de preguntas
 
 | Pregunta | Respuesta actual |
 |---|---|
-| «¿Cuántos casos siguen abiertos?» | Total abierto de la instantánea y advertencia sobre backlog histórico. |
+| «¿Cuántos casos siguen abiertos?» | Total abierto de la instantánea. |
+| «¿Cuál era el backlog al 2023-05-31?» | Abiertos al cierre de esa fecha según recepciones y cierres. |
 | «¿Cuál es el SLA?» | Dentro/fuera de 48 horas y porcentaje entre casos cerrados. |
 | «¿Qué canal tiene más casos?» | Canal principal y desglose por canal. |
 | «¿Cómo evolucionó el volumen mensual?» | Casos recibidos por mes, no cierres mensuales. |
@@ -80,6 +87,8 @@ Existe un límite de **10 intentos de IA por IP y hora por instancia de función
 | `evidence/` | Capturas exportadas del informe y guía para incorporarlas. |
 | `lib/query.mjs` | Interpretación local, filtros, cálculos y respuesta. |
 | `lib/scenarios.mjs` | Definiciones de los cuatro escenarios guiados. |
+| `lib/history.mjs` | Serie diaria y cálculo de backlog a fecha de corte. |
+| `public/data/timeline.json` | Recorrido progresivo editable con enlaces a evidencia. |
 | `api/chat.mjs` | Función de Vercel; interpretación opcional con Gemini u OpenAI. |
 | `tests/*.test.mjs` | Pruebas de cruces, API y consistencia entre escenarios y dataset. |
 
@@ -92,6 +101,7 @@ También hay una entrada [`../api/chat.mjs`](../api/chat.mjs) y [`../vercel.json
 3. Si el proyecto conserva el preset Python de una importación anterior, cambiarlo en **Project Settings → Build and Deployment** y volver a desplegar.
 4. Cada push a `main` puede crear un nuevo despliegue si la integración Git está habilitada. Confirmar en Vercel que el build termina y probar la página y el chat.
 5. Para activar la interpretación con IA, agregar **una** de `GEMINI_API_KEY` u `OPENAI_API_KEY` como variable de entorno del servidor en Vercel y volver a desplegar. `GEMINI_MODEL` y `OPENAI_MODEL` son opcionales. La clave no debe llevar el prefijo `NEXT_PUBLIC_` ni guardarse en el repositorio.
+6. Para un límite compartido entre instancias, crear una base Redis REST compatible con Upstash y agregar `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN` en Vercel. Probar que, al agotarse la cuota, el chat continúa respondiendo en modo `dataset`. Configurar además un límite de gasto en el proveedor del modelo.
 
 Se puede usar `web` como Root Directory, Framework Preset **Other** y su `vercel.json` local. Hay que mantener alineados directorio raíz, comando de build y directorio de salida; no mezclar valores de ambas configuraciones.
 
@@ -114,11 +124,11 @@ El CI ejecuta los tests y el build de la web, además del pipeline Python/Postgr
 
 La opción **gratis y estable para comenzar** es el modo `dataset` actual: ya responde cifras concretas sin llamar a un proveedor. Para lenguaje natural más flexible, algunos proveedores ofrecen cuotas gratuitas de desarrollo, por ejemplo Gemini API, Groq o Cloudflare Workers AI, pero sus límites, condiciones y disponibilidad cambian. Antes de elegir uno hay que comprobar la tarifa vigente y si admite uso público desde una función de Vercel. La cuenta gratuita de ChatGPT no equivale a crédito gratuito para la API de OpenAI.
 
-La integración implementa Gemini API y OpenAI Responses API. Una API gratuita puede imponer límites por minuto, solicitudes diarias, disponibilidad o políticas de datos; comprobar las condiciones vigentes al crear la clave. En una web pública, el límite local por instancia no garantiza un techo global de consumo. Establecer un presupuesto o cuota dura en el proveedor antes de activarla.
+La integración implementa Gemini API y OpenAI Responses API. Una API gratuita puede imponer límites por minuto, solicitudes diarias, disponibilidad o políticas de datos; comprobar las condiciones vigentes al crear la clave. En una web pública, el límite local por instancia no garantiza un techo global de consumo. La integración Redis opcional agrega ese techo compartido; establecer también un presupuesto o cuota dura en el proveedor antes de activarla.
 
 ## Privacidad y límites analíticos
 
 - Los CSV y el resumen son sintéticos y públicos. El chat no recibe datos reales de clientes.
 - El modo IA envía la pregunta del visitante y un catálogo de valores permitidos al proveedor configurado. No pedir información personal en el chat.
-- El dataset registra el estado actual de cada caso; no permite reconstruir transiciones ni backlog histórico.
+- El backlog al cierre de cada día se puede calcular con recepciones y cierres, bajo el supuesto de que no hay reaperturas. No se pueden reconstruir estados intermedios.
 - Las respuestas describen esta muestra, no resultados de una operación real.

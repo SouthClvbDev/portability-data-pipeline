@@ -236,7 +236,7 @@ Total: 7.500
 
 ## 10. Etapa 7: capa analítica SQL
 
-PostgreSQL contiene seis vistas:
+PostgreSQL contiene las siguientes vistas:
 
 | Vista | Propósito |
 |---|---|
@@ -246,6 +246,8 @@ PostgreSQL contiene seis vistas:
 | `vw_team_performance` | Desempeño y resolución por equipo. |
 | `vw_sla_by_channel` | Cumplimiento de SLA por canal. |
 | `vw_monthly_operational_metrics` | Evolución operativa mensual. |
+| `vw_case_observed_events` | Recepciones y cierres con marca temporal. |
+| `vw_daily_backlog` | Ingresos, cierres y abiertos al final de cada día. |
 
 Las vistas centralizan consultas frecuentes y sirven para validar que PostgreSQL y Power BI produzcan resultados coherentes.
 
@@ -284,7 +286,7 @@ Las vistas agregadas se conservan como capa SQL de consulta y validación, pero 
 
 ## 12. Etapa 9: pruebas automatizadas
 
-El proyecto contiene 24 pruebas con pytest.
+El proyecto contiene 26 pruebas con pytest.
 
 ### Pruebas del pipeline: 16
 
@@ -298,7 +300,7 @@ Validan:
 - compatibilidad de los lotes;
 - ausencia de IDs compartidos.
 
-### Pruebas de PostgreSQL: 6
+### Pruebas de PostgreSQL: 10
 
 Validan:
 
@@ -308,11 +310,12 @@ Validan:
 - consistencia de la vista KPI;
 - abiertos más cerrados igual a total;
 - métricas mensuales y existencia de vistas.
+- reconciliación de eventos observables y backlog final con la tabla base.
 
 Resultado actual:
 
 ```text
-24 passed
+26 passed
 ```
 
 ## 13. Resultados del pipeline
@@ -373,9 +376,7 @@ Una evolución productiva utilizaría:
 
 ### Historial operativo
 
-El dataset registra el estado actual del trámite, pero no todas sus transiciones. Por eso no permite reconstruir con precisión el backlog histórico a cualquier fecha.
-
-Para hacerlo se necesitaría una tabla de eventos o snapshots periódicos.
+El dataset registra el estado actual del trámite, pero no todas sus transiciones. Con `received_at` y `closed_at` sí se puede calcular el backlog al cierre de cada día, suponiendo que no hay reaperturas; [`docs/observable_history.md`](observable_history.md) explica la definición y las vistas. Para conocer cuánto tiempo pasó cada caso en una etapa intermedia o cuándo se reabrió haría falta una tabla de eventos de estado o snapshots periódicos.
 
 ### SLA
 
@@ -396,15 +397,15 @@ El límite de 48 horas es sintético y no representa un compromiso contractual r
 
 ### Versión de 30 segundos
 
-> Desarrollé un pipeline de datos sintéticos para analizar trámites de portabilidad de un Backoffice. Genera y valida los datos con Python, los transforma en un modelo analítico, realiza cargas iniciales e incrementales idempotentes en PostgreSQL sobre Docker y expone métricas mediante vistas SQL y un dashboard de Power BI. El proyecto maneja 7.500 registros, tiene seis vistas y 24 pruebas automatizadas.
+> Desarrollé un pipeline de datos sintéticos para analizar trámites de portabilidad de un Backoffice. Genera y valida los datos con Python, los transforma en un modelo analítico, realiza cargas iniciales e incrementales idempotentes en PostgreSQL sobre Docker y expone métricas mediante vistas SQL y un dashboard de Power BI. La web permite seguir su construcción y explorar indicadores verificables, incluido el backlog al cierre de una fecha.
 
 ### Versión de dos minutos
 
 > El proyecto nace de una experiencia que tuve trabajando con trámites de portabilidad. Quise reconstruir ese flujo con herramientas actuales y sin utilizar datos reales. Primero genero un lote inicial de 5.000 trámites y otro incremental de 2.500. Antes de cargar, valido IDs, fechas, estados y reglas operativas, y después genero 21 columnas analíticas, incluyendo indicadores de casos abiertos, cerrados y SLA.
 >
-> PostgreSQL corre en Docker. La carga inicial usa TRUNCATE para conservar las vistas, y la incremental compara los case_id existentes para insertar únicamente registros nuevos. Si vuelvo a ejecutar el mismo lote, no genera duplicados. Sobre la tabla detallada construí seis vistas SQL y conecté Power BI para crear páginas de resumen, demoras y evolución mensual.
+> PostgreSQL corre en Docker. La carga inicial usa TRUNCATE para conservar las vistas, y la incremental usa la clave primaria para insertar únicamente registros nuevos. Si vuelvo a ejecutar el mismo lote, no genera duplicados. Sobre la tabla detallada construí vistas SQL y conecté Power BI para crear páginas de resumen, demoras y evolución mensual.
 >
-> Finalmente agregué 24 pruebas automatizadas: 16 sobre archivos y reglas del pipeline y 8 sobre PostgreSQL y sus vistas. También documenté decisiones y limitaciones, como la necesidad de staging y cargas masivas para millones de registros.
+> También agregué pruebas automatizadas sobre archivos, reglas del pipeline y PostgreSQL. El portfolio web muestra el proceso por etapas y responde preguntas calculadas desde la muestra. Las fechas de recepción y cierre permiten analizar el backlog diario; los cambios entre estados intermedios siguen siendo una limitación explícita.
 
 ## 18. Preguntas que podrían hacer y respuestas
 

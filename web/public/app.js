@@ -118,6 +118,71 @@ async function loadReport() {
   } catch { grid.textContent = 'No se pudo cargar la galería del informe. Revisá la construcción del sitio.'; }
 }
 
+async function loadHistory() {
+  try {
+    const response = await fetch('/data/history.json');
+    if (!response.ok) throw new Error('No se pudo cargar el historial');
+    const { series } = await response.json();
+    if (!series.length) throw new Error('Historial vacío');
+    const chart = $('#history-chart');
+    const svg = (tag, attributes) => {
+      const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
+      for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
+      return node;
+    };
+    const peak = Math.max(...series.map(day => day.open), 1);
+    const point = (index) => ({ x: 15 + index / Math.max(series.length - 1, 1) * 770, y: 160 - series[index].open / peak * 135 });
+    chart.append(svg('line', { x1: 15, y1: 160, x2: 785, y2: 160, stroke: '#c7d9d3' }));
+    chart.append(svg('polyline', { points: series.map((_, index) => { const { x, y } = point(index); return `${x},${y}`; }).join(' '), fill: 'none', stroke: '#0c9b87', 'stroke-width': 3, 'stroke-linejoin': 'round' }));
+    const marker = svg('circle', { r: 6, fill: '#102a36', stroke: '#fff', 'stroke-width': 2 }); chart.append(marker);
+    const slider = $('#history-day'); slider.max = String(series.length - 1); slider.value = slider.max; slider.disabled = false;
+    const ask = $('#history-ask'); ask.disabled = false;
+    const select = () => {
+      const entry = series[Number(slider.value)];
+      const { x, y } = point(Number(slider.value)); marker.setAttribute('cx', x); marker.setAttribute('cy', y);
+      $('#history-open').textContent = number(entry.open);
+      $('#history-date').textContent = `al cierre del ${entry.date}`;
+      $('#history-detail').textContent = `Ese día ingresaron ${number(entry.received)} casos y cerraron ${number(entry.closed)}.`;
+      chart.setAttribute('aria-label', `Casos abiertos diarios del ${series[0].date} al ${series.at(-1).date}; fecha seleccionada ${entry.date}: ${entry.open} abiertos.`);
+    };
+    slider.addEventListener('input', select); select();
+    ask.addEventListener('click', () => { $('#question').value = `¿Cuál era el backlog al ${series[Number(slider.value)].date}?`; $('#asistente').scrollIntoView({ behavior: 'smooth' }); $('#question').focus({ preventScroll: true }); });
+  } catch { $('#history-detail').textContent = 'No se pudo cargar la evolución diaria. Revisá la construcción del sitio.'; }
+}
+
+async function loadTimeline() {
+  const card = $('#timeline-card');
+  try {
+    const response = await fetch('/data/timeline.json');
+    if (!response.ok) throw new Error('No se pudo cargar el recorrido');
+    const stages = await response.json();
+    const tabs = $('#timeline-tabs'); const play = $('#timeline-play');
+    let current = 0; let timer = null;
+    const buttons = stages.map((stage, index) => {
+      const button = element('button', '', String(index + 1).padStart(2, '0'));
+      button.type = 'button'; button.title = stage.title; button.setAttribute('aria-label', `Etapa ${index + 1}: ${stage.title}`);
+      button.addEventListener('click', () => { stop(); show(index); }); tabs.append(button); return button;
+    });
+    const show = (index) => {
+      current = index; buttons.forEach((button, position) => button.setAttribute('aria-pressed', String(position === index)));
+      const stage = stages[index]; card.replaceChildren();
+      const copy = element('div');
+      copy.append(element('p', 'eyebrow', `ETAPA ${String(index + 1).padStart(2, '0')} / ${String(stages.length).padStart(2, '0')}`), element('h3', '', stage.title), element('p', 'timeline-question', stage.question), element('p', 'timeline-result', stage.result));
+      const link = element('a', 'text-link', `Ver evidencia: ${stage.evidence} ↗`);
+      link.href = `https://github.com/SouthClvbDev/portability-data-pipeline/blob/main/${stage.evidence}`;
+      link.target = '_blank'; link.rel = 'noopener noreferrer'; copy.append(link);
+      card.append(copy, element('span', 'timeline-count', String(index + 1).padStart(2, '0')));
+    };
+    const stop = () => { if (timer) clearInterval(timer); timer = null; play.textContent = 'Reproducir recorrido ▶'; };
+    play.addEventListener('click', () => {
+      if (timer) { stop(); return; }
+      show(0); play.textContent = 'Pausar recorrido Ⅱ';
+      timer = setInterval(() => { if (current === stages.length - 1) stop(); else show(current + 1); }, 4000);
+    });
+    if (stages.length) show(0);
+  } catch { card.textContent = 'No se pudo cargar el recorrido del proyecto.'; }
+}
+
 async function ask(question) {
   message(question, 'user'); const pending = message('Consultando el resumen…', 'bot');
   try {
@@ -134,3 +199,5 @@ document.querySelectorAll('[data-question]').forEach((button) => button.addEvent
 loadData();
 loadScenarios();
 loadReport();
+loadHistory();
+loadTimeline();

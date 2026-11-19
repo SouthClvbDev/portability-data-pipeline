@@ -104,7 +104,7 @@ La carga incremental:
 - compatibilidad de columnas;
 - ausencia de solapamiento entre lotes.
 
-### PostgreSQL: 6 pruebas
+### PostgreSQL: 10 pruebas
 
 - conexión disponible;
 - 7.500 registros;
@@ -112,11 +112,12 @@ La carga incremental:
 - vista KPI igual a tabla base;
 - abiertos + cerrados = total;
 - métricas mensuales y vistas esperadas.
+- ingresos, cierres y backlog diario reconciliados con la tabla base.
 
 Resultado actual:
 
 ```text
-24 passed
+26 passed
 ```
 
 ## Verificaciones manuales de referencia

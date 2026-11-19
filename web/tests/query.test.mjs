@@ -34,7 +34,7 @@ test('rechaza filtro inventado del modelo', () => {
   assert.throws(() => answerQuery('casos', records, { metric: 'count', groupBy: null, filters: { team: 'Inventado' } }), /Filtro inválido/);
 });
 
-test('no explica causas ausentes ni backlog pasado', () => {
+test('no explica causas ausentes y solicita fecha para backlog', () => {
   assert.equal(interpret('casos de mayo', records).filters.month, '2023-05');
   assert.equal(answerQuery('¿Por qué se rechazan?', records).spec, null);
   assert.equal(answerQuery('backlog histórico', records).spec, null);

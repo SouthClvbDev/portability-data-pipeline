@@ -173,7 +173,7 @@ docker exec -it portability-postgres psql -U data_user -d portability_db -c "SEL
 
 ## 9. Ejecutar pruebas
 
-PostgreSQL debe estar iniciado porque seis pruebas consultan la base.
+PostgreSQL debe estar iniciado porque las pruebas de integración consultan la base.
 
 ```powershell
 pytest -q
@@ -182,7 +182,7 @@ pytest -q
 Resultado esperado:
 
 ```text
-24 passed
+26 passed
 ```
 
 ## 10. Actualizar Power BI

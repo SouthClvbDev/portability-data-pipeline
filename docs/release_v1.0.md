@@ -2,6 +2,8 @@
 
 Primera versión de portfolio reproducible del pipeline analítico de portabilidad. Todos los casos son sintéticos.
 
+> Este documento describe la versión 1.0. La [historia observable](observable_history.md) y el recorrido progresivo de la web se agregaron después; no forman parte de esta versión.
+
 ## Incluye
 
 - Dos lotes CSV de 5.000 y 2.500 casos, con validación de reglas operativas.

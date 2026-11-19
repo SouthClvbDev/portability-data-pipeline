@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { parse } from 'csv-parse/sync';
 import { buildScenarios } from '../lib/scenarios.mjs';
+import { buildHistory } from '../lib/history.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const web = path.join(root, 'web');
@@ -40,12 +41,17 @@ const summary = {
 summary.slaRate = Number((summary.withinSla / summary.closed * 100).toFixed(1));
 await mkdir(path.join(web, 'public/data'), { recursive: true });
 await writeFile(path.join(web, 'public/data/summary.json'), JSON.stringify(summary, null, 2) + '\n');
+const history = buildHistory(rows);
+if (history.series.at(-1).open !== summary.open) throw new Error('El backlog final no coincide con la instantánea');
+await writeFile(path.join(web, 'public/data/history.json'), JSON.stringify(history) + '\n');
 const records = rows.map((row) => ({
   status: row.status,
   channel: row.channel,
   team: row.team,
   month: row.received_at.slice(0, 7),
-  resolutionHours: row.resolution_hours === '' ? null : Number(row.resolution_hours)
+  resolutionHours: row.resolution_hours === '' ? null : Number(row.resolution_hours),
+  receivedAt: row.received_at,
+  closedAt: row.closed_at || null
 }));
 await mkdir(path.join(web, 'data'), { recursive: true });
 await writeFile(path.join(web, 'data/records.json'), JSON.stringify(records) + '\n');

@@ -210,3 +210,11 @@ Resultados generales actuales:
 - Evaluar dbt u orquestación cuando el alcance lo justifique.
 - Publicar el repositorio y preparar capturas del dashboard.
 
+## Avance posterior: historia observable y recorrido del portfolio
+
+- Se derivaron ingresos y cierres diarios de las marcas de tiempo existentes, sin crear estados intermedios ficticios.
+- `vw_case_observed_events` y `vw_daily_backlog` permiten comprobar el backlog al cierre de una fecha en PostgreSQL.
+- La web incluye un selector de fecha y el asistente responde la misma pregunta desde los CSV sintéticos.
+- «Proyecto vivo» muestra seis etapas progresivas, cada una enlazada con su evidencia en el repositorio. Puede grabarse como base de una primera demo visual.
+- El PBIX y sus capturas siguen bajo edición del autor.
+

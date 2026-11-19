@@ -16,6 +16,8 @@ El lote diario se versiona junto con los dos lotes base. La web deriva sus métr
 
 [`daily_data.yml`](../.github/workflows/daily_data.yml) se programa a las **23:00 UTC (20:00 de Argentina)** y también admite ejecución manual con `workflow_dispatch`. Regenera la muestra completa hasta la hora actual. Así recupera días omitidos sin duplicar IDs. Si cambian el CSV o sus metadatos, valida el pipeline y la web, commitea ambos archivos en `main` y los pushea.
 
+El workflow también genera y comprueba el [dataset de escala completa para Power BI](full_scale_dataset.md) con el mismo corte, más un lote incremental con doce días de solapamiento. Los publica como artefacto descargable durante 7 días; esos archivos grandes no se commitean y no alimentan la web.
+
 Una integración Git de Vercel puede desplegar ese push. Si no lo hace, crear un deploy hook de Vercel y guardar su URL como secreto `VERCEL_DEPLOY_HOOK_URL` en GitHub Actions. El workflow llamará al hook después del push. Verificar en Vercel que la fecha mostrada en la web coincide con `daily.meta.json`. Los horarios de GitHub Actions son aproximados y una ejecución puede retrasarse; la siguiente recupera todo el intervalo.
 
 ## Uso manual

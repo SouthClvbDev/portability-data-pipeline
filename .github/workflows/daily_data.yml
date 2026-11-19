@@ -49,6 +49,26 @@ jobs:
       - name: Construir y probar portfolio
         if: steps.changes.outputs.changed == 'true'
         run: npm run build && npm run test:web
+      - name: Generar muestra completa para Power BI
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          cutoff=$(python -c 'import json; print(json.load(open("data/sample/portability_cases_daily.meta.json"))["asOf"])')
+          python src/generate_full_scale_data.py --as-of "$cutoff"
+          python -m src.load_full_scale_to_postgres
+          since=$(python -c 'import json; from datetime import date,timedelta; value=json.load(open("data/sample/portability_cases_daily.meta.json"))["asOf"]; print((date.fromisoformat(value[:10])-timedelta(days=12)).isoformat())')
+          python src/generate_full_scale_data.py --start "$since" --as-of "$cutoff" --output data/generated/portability_cases_incremental.csv.gz
+          python -m src.load_full_scale_to_postgres --mode sync --input data/generated/portability_cases_incremental.csv.gz
+      - uses: actions/upload-artifact@v4
+        if: steps.changes.outputs.changed == 'true'
+        with:
+          name: portability-full-scale
+          path: |
+            data/generated/portability_cases_full.csv.gz
+            data/generated/portability_cases_full.manifest.json
+            data/generated/portability_cases_incremental.csv.gz
+            data/generated/portability_cases_incremental.manifest.json
+          retention-days: 7
+          if-no-files-found: error
       - name: Publicar muestra versionada
         if: steps.changes.outputs.changed == 'true'
         run: |

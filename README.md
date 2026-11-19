@@ -151,6 +151,10 @@ La [guía de rediseño](docs/dashboard_design.md) detalla jerarquía, colores y 
 
 La [web de portfolio](https://portability-data-pipeline.vercel.app/) explica el proyecto por etapas, calcula indicadores desde los CSV sintéticos e incluye cuatro escenarios guiados con cifras reproducibles. Un recorrido progresivo enlaza cada etapa con su código; un gráfico diario muestra el backlog según las fechas de recepción y cierre. También presenta las tres páginas del informe Power BI y muestra capturas verificables cuando se exportan; por ahora indica cuáles están pendientes. El asistente responde preguntas con filtros combinados por mes, estado, canal y equipo, y backlog a una fecha; los números se calculan en el servidor. Funciona sin IA y admite interpretación opcional de preguntas con Gemini u OpenAI mediante una clave del servidor. La [documentación de la web](web/README.md) explica arquitectura, operación, límites y opciones de costo.
 
+## Dataset de escala completa para Power BI
+
+Además de la muestra ligera de la web, el proyecto puede generar desde enero de 2023 un [dataset sintético de escala completa](docs/full_scale_dataset.md). Los meses completos simulan entre 15.000 y 25.000 recepciones normales, con picos positivos y negativos. Se entrega como CSV comprimido con 21 columnas, un manifiesto de control y un lote incremental con solapamiento para capturar cierres recientes. Una carga con `COPY` lo coloca en `public.portability_cases_full` y el modo `sync` aplica los cambios recientes, sin alterar la tabla de la demo ni el PBIX. La tarea diaria ofrece los archivos como artefacto descargable de GitHub Actions; no se versiona el archivo grande en Git.
+
 ## Calidad y pruebas
 
 Las pruebas verifican:
@@ -179,6 +183,7 @@ Las pruebas verifican:
 - [`docs/next_scenarios.md`](docs/next_scenarios.md)
 - [`docs/observable_history.md`](docs/observable_history.md)
 - [`docs/daily_synthetic_updates.md`](docs/daily_synthetic_updates.md)
+- [`docs/full_scale_dataset.md`](docs/full_scale_dataset.md)
 - [`docs/release_v1.0.md`](docs/release_v1.0.md)
 - [`web/README.md`](web/README.md)
 

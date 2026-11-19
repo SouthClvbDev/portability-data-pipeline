@@ -11,4 +11,7 @@ data/processed/*
 *.pbit.lock
 ~$*.pbix
 Thumbs.db
+web/node_modules/
+web/.vercel/
+web/public/data/summary.json
 .DS_Store

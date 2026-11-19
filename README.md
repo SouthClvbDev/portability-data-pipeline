@@ -141,6 +141,10 @@ El archivo PBIX requiere Power BI Desktop para verlo. La demo ejecutable y sus r
 
 La [guía de rediseño](docs/dashboard_design.md) detalla jerarquía, colores y distribución por página. Esta [maqueta del resumen](docs/dashboard_mockup.svg) muestra la dirección visual propuesta; no es una captura del PBIX.
 
+## Portfolio web y asistente
+
+[`web/`](web/) contiene una web para Vercel que explica el proyecto por etapas, calcula indicadores a partir de los CSV sintéticos y permite hacer preguntas sobre el resumen. Funciona sin LLM; la integración opcional usa `OPENAI_API_KEY` únicamente en la función del servidor. [Guía de despliegue y límites](web/README.md).
+
 ## Calidad y pruebas
 
 Las pruebas verifican:

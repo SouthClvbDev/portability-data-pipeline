@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "public",
+  "functions": { "api/chat.mjs": { "includeFiles": "public/data/summary.json" } }
+}

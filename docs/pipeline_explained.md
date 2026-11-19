@@ -284,7 +284,7 @@ Las vistas agregadas se conservan como capa SQL de consulta y validación, pero 
 
 ## 12. Etapa 9: pruebas automatizadas
 
-El proyecto contiene 22 pruebas con pytest.
+El proyecto contiene 24 pruebas con pytest.
 
 ### Pruebas del pipeline: 16
 
@@ -312,7 +312,7 @@ Validan:
 Resultado actual:
 
 ```text
-22 passed
+24 passed
 ```
 
 ## 13. Resultados del pipeline
@@ -326,7 +326,7 @@ Resultado actual:
 | Período | enero-junio 2023 |
 | Columnas analíticas | 21 |
 | Vistas SQL | 6 |
-| Pruebas | 22 exitosas |
+| Pruebas | 24 exitosas |
 | Páginas de Power BI | 3 |
 
 KPI generales del dataset:
@@ -396,7 +396,7 @@ El límite de 48 horas es sintético y no representa un compromiso contractual r
 
 ### Versión de 30 segundos
 
-> Desarrollé un pipeline de datos sintéticos para analizar trámites de portabilidad de un Backoffice. Genera y valida los datos con Python, los transforma en un modelo analítico, realiza cargas iniciales e incrementales idempotentes en PostgreSQL sobre Docker y expone métricas mediante vistas SQL y un dashboard de Power BI. El proyecto maneja 7.500 registros, tiene seis vistas y 22 pruebas automatizadas.
+> Desarrollé un pipeline de datos sintéticos para analizar trámites de portabilidad de un Backoffice. Genera y valida los datos con Python, los transforma en un modelo analítico, realiza cargas iniciales e incrementales idempotentes en PostgreSQL sobre Docker y expone métricas mediante vistas SQL y un dashboard de Power BI. El proyecto maneja 7.500 registros, tiene seis vistas y 24 pruebas automatizadas.
 
 ### Versión de dos minutos
 
@@ -404,7 +404,7 @@ El límite de 48 horas es sintético y no representa un compromiso contractual r
 >
 > PostgreSQL corre en Docker. La carga inicial usa TRUNCATE para conservar las vistas, y la incremental compara los case_id existentes para insertar únicamente registros nuevos. Si vuelvo a ejecutar el mismo lote, no genera duplicados. Sobre la tabla detallada construí seis vistas SQL y conecté Power BI para crear páginas de resumen, demoras y evolución mensual.
 >
-> Finalmente agregué 22 pruebas automatizadas: 16 sobre archivos y reglas del pipeline y 6 sobre PostgreSQL y sus vistas. También documenté decisiones y limitaciones, como el hecho de que para millones de registros reemplazaría la comparación en pandas por staging y un upsert en SQL.
+> Finalmente agregué 24 pruebas automatizadas: 16 sobre archivos y reglas del pipeline y 8 sobre PostgreSQL y sus vistas. También documenté decisiones y limitaciones, como la necesidad de staging y cargas masivas para millones de registros.
 
 ## 18. Preguntas que podrían hacer y respuestas
 

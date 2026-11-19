@@ -42,11 +42,9 @@ python src\load_to_postgres.py `
 1. Validar que el archivo exista.
 2. Leer el CSV procesado.
 3. Verificar presencia y unicidad de `case_id` dentro del lote.
-4. Confirmar que `portability_cases` exista.
-5. Consultar los IDs ya cargados.
-6. Filtrar registros repetidos.
-7. Insertar las filas nuevas con `append`.
-8. Informar insertados, ignorados y total final.
+4. Crear o actualizar el esquema y sus restricciones.
+5. Insertar en lotes usando `ON CONFLICT (case_id) DO NOTHING`.
+6. Informar insertados, ignorados y total final.
 
 ## Idempotencia
 
@@ -109,14 +107,13 @@ Esperado: cero filas.
 
 ## Limitaciones de la implementación
 
-El enfoque actual carga los IDs existentes en memoria. Es adecuado para un portfolio y miles de filas, pero no para volúmenes muy grandes.
+El enfoque actual crea sentencias SQL por lotes de 500 filas. Es adecuado para miles de filas, pero para volúmenes grandes convendría usar `COPY` hacia staging.
 
 Una evolución productiva podría usar:
 
 1. tabla staging;
-2. constraint único o clave primaria sobre `case_id`;
-3. carga masiva con `COPY`;
-4. `INSERT ... ON CONFLICT DO NOTHING` o `MERGE`;
+2. carga masiva con `COPY`;
+3. `INSERT ... ON CONFLICT DO NOTHING` o `MERGE` desde staging;
 5. tabla de auditoría de lotes;
 6. transacciones y conteos de control;
 7. cuarentena para registros inválidos.

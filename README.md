@@ -1,5 +1,7 @@
 # Portability Data Pipeline
 
+[![CI](https://github.com/SouthClvbDev/portability-data-pipeline/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/SouthClvbDev/portability-data-pipeline/actions/workflows/ci.yml)
+
 Proyecto de portfolio orientado a un perfil **Data Developer**, basado en un escenario operativo de trámites de portabilidad gestionados por un área de Backoffice.
 
 El proyecto implementa un pipeline reproducible que genera datos sintéticos, valida reglas de calidad, transforma la información, carga PostgreSQL, crea una capa analítica SQL y alimenta un dashboard interactivo en Power BI.
@@ -101,19 +103,29 @@ portability-data-pipeline/
 | Período | 2023-01-01 a 2023-06-30 |
 | Columnas analíticas | 21 |
 | Vistas analíticas | 6 |
-| Pruebas automatizadas | 22 exitosas |
+| Pruebas automatizadas | 24 exitosas |
 
 ## Inicio rápido
 
-Desde PowerShell, en la raíz del proyecto:
+En Linux o macOS, desde la raíz del proyecto:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+bash scripts/demo.sh
+```
+
+La demo valida ambos CSV, transforma y carga 7.500 casos, crea las seis vistas y ejecuta las pruebas. `bash scripts/demo.sh` puede repetirse; la carga inicial reconstruye los datos de muestra. Requiere Docker Compose y el puerto 5432 disponible. Para configurar las credenciales locales, copiá `.env.example` a `.env`; `.env` está excluido de Git.
+
+En Windows PowerShell, seguí [el runbook](docs/runbook.md). Para ejecutar solo las pruebas, con PostgreSQL y los datos ya cargados:
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
-docker compose up -d
+docker compose up -d --wait
 pytest -q
 ```
 
-Para reconstruir todo desde cero, consultar [`docs/runbook.md`](docs/runbook.md).
+La arquitectura y sus límites están en [`docs/architecture.md`](docs/architecture.md). El flujo de GitHub Actions ejecuta esta misma demo en Python 3.13.
 
 ## Dashboard
 
@@ -124,6 +136,10 @@ El tablero `dashboard/portability_operations.pbix` contiene:
 - **Evolución Mensual:** tendencias y comparación T1 versus T2.
 
 Power BI utiliza principalmente `public.portability_cases`, relacionada con una tabla calendario, para que los segmentadores afecten de forma coherente a todos los visuales. Las vistas SQL se conservan como capa analítica, validación y consumo alternativo.
+
+El archivo PBIX requiere Power BI Desktop para verlo. La demo ejecutable y sus resultados se pueden comprobar sin Power BI. Las capturas de las tres páginas se incorporarán tras exportarlas desde Power BI Desktop; no se presentan imágenes reconstruidas como si fueran capturas del tablero.
+
+La [guía de rediseño](docs/dashboard_design.md) detalla jerarquía, colores y distribución por página. Esta [maqueta del resumen](docs/dashboard_mockup.svg) muestra la dirección visual propuesta; no es una captura del PBIX.
 
 ## Calidad y pruebas
 
@@ -137,6 +153,7 @@ Las pruebas verifican:
 - conexión y cantidad de registros en PostgreSQL;
 - consistencia entre tabla base y vistas;
 - existencia de las seis vistas analíticas.
+- restricciones de unicidad y estados en PostgreSQL.
 
 ## Documentación
 
@@ -148,8 +165,10 @@ Las pruebas verifican:
 - [`docs/progress.md`](docs/progress.md)
 - [`docs/runbook.md`](docs/runbook.md)
 - [`docs/technical_decisions.md`](docs/technical_decisions.md)
+- [`docs/demo_video_plan.md`](docs/demo_video_plan.md)
+- [`docs/release_v1.0.md`](docs/release_v1.0.md)
 
 ## Estado
 
-El pipeline, la carga incremental, la capa SQL, el dashboard y las pruebas automatizadas están implementados. Las próximas mejoras posibles son automatización/orquestación, credenciales mediante `.env`, constraints físicos en PostgreSQL, CI y publicación del dashboard.
+El pipeline, la carga incremental, la capa SQL, el dashboard y las pruebas automatizadas están implementados. Las próximas mejoras posibles son CI, historial de cambios de estado y capturas verificables del dashboard.
 

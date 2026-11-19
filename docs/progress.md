@@ -189,7 +189,7 @@ Resultados generales actuales:
 
 - Se agregaron 6 pruebas de integración.
 - Se valida conexión, total, unicidad, abiertos/cerrados, vista mensual y existencia de vistas.
-- Resultado total del proyecto: **22 pruebas exitosas**.
+- Resultado actual del proyecto: **24 pruebas exitosas**.
 
 ## Estado actual
 
@@ -198,13 +198,12 @@ Resultados generales actuales:
 - Carga incremental idempotente: completa.
 - Capa analítica SQL: completa.
 - Dashboard de tres páginas: funcional.
-- Pruebas automatizadas: 22 exitosas.
+- Pruebas automatizadas: 24 exitosas.
 - Git: cambios versionados mediante commits descriptivos.
 
 ## Próximas mejoras
 
-- Mover credenciales a un archivo `.env` no versionado.
-- Definir constraints e índices físicos en PostgreSQL.
+- Agregar CI para ejecutar pruebas automáticamente.
 - Medir cierres diarios por `closed_at`, no solo por fecha de recepción.
 - Modelar historial de transiciones para reconstruir backlog a una fecha de corte.
 - Incorporar CI para ejecutar pytest automáticamente.

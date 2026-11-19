@@ -2,8 +2,12 @@ import os
 
 import pandas as pd
 import pytest
+from dotenv import load_dotenv
+from pathlib import Path
 from sqlalchemy import create_engine, text
+from sqlalchemy.exc import IntegrityError
 
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 DB_HOST = os.getenv("POSTGRES_HOST", "localhost")
 DB_PORT = os.getenv("POSTGRES_PORT", "5432")
@@ -40,6 +44,20 @@ def test_database_has_7500_records(engine):
         ).scalar()
 
     assert total == 7500
+
+
+def test_database_enforces_unique_case_ids(engine):
+    with engine.connect() as connection:
+        with pytest.raises(IntegrityError):
+            connection.execute(text("INSERT INTO public.portability_cases SELECT * FROM public.portability_cases LIMIT 1"))
+        connection.rollback()
+
+
+def test_database_rejects_invalid_status(engine):
+    with engine.connect() as connection:
+        with pytest.raises(IntegrityError):
+            connection.execute(text("INSERT INTO public.portability_cases SELECT 'PORT-INVALID', received_at, received_date, received_year, received_month, received_month_name, received_weekday, closed_at, 'Estado inválido', is_closed, is_pending, channel, team, documentation_status, has_documentation_pending, contact_status, has_contact_pending, rejection_reason, cancellation_reason, resolution_hours, sla_status FROM public.portability_cases LIMIT 1"))
+        connection.rollback()
 
 
 def test_case_ids_are_unique_in_database(engine):

@@ -1,4 +1,5 @@
 from pathlib import Path
+import argparse
 import sys
 
 import pandas as pd
@@ -50,13 +51,16 @@ def add_error(errors, message):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Valida un lote de portabilidad.")
+    parser.add_argument("--input", type=Path, default=INPUT_FILE)
+    args = parser.parse_args()
     errors = []
 
-    if not INPUT_FILE.exists():
-        print(f"ERROR: no existe el archivo {INPUT_FILE}")
+    if not args.input.exists():
+        print(f"ERROR: no existe el archivo {args.input}")
         sys.exit(1)
 
-    df = pd.read_csv(INPUT_FILE)
+    df = pd.read_csv(args.input)
 
     missing_columns = [
         column for column in REQUIRED_COLUMNS if column not in df.columns
@@ -214,7 +218,7 @@ def main():
 
     print("VALIDACIÓN EXITOSA")
     print("-" * 40)
-    print(f"Archivo: {INPUT_FILE.name}")
+    print(f"Archivo: {args.input.name}")
     print(f"Registros validados: {len(df)}")
     print(f"Columnas validadas: {len(df.columns)}")
     print("No se encontraron inconsistencias.")

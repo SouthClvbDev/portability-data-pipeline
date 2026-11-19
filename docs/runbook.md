@@ -182,7 +182,7 @@ pytest -q
 Resultado esperado:
 
 ```text
-22 passed
+24 passed
 ```
 
 ## 10. Actualizar Power BI

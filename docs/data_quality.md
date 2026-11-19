@@ -116,7 +116,7 @@ La carga incremental:
 Resultado actual:
 
 ```text
-22 passed
+24 passed
 ```
 
 ## Verificaciones manuales de referencia

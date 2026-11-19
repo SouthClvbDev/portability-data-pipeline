@@ -1,12 +1,15 @@
 from pathlib import Path
 import argparse
 import os
+from dotenv import load_dotenv
 
 import pandas as pd
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, MetaData, Table
+from sqlalchemy.dialects.postgresql import insert
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
+load_dotenv(BASE_DIR / ".env")
 
 DEFAULT_INPUT_FILE = (
     BASE_DIR
@@ -21,10 +24,9 @@ DB_NAME = os.getenv("POSTGRES_DB", "portability_db")
 DB_USER = os.getenv("POSTGRES_USER", "data_user")
 DB_PASSWORD = os.getenv("POSTGRES_PASSWORD", "data_password_dev")
 
-DATABASE_URL = (
-    f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}"
-    f"@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-)
+from sqlalchemy.engine import URL
+
+DATABASE_URL = URL.create("postgresql+psycopg2", username=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=int(DB_PORT), database=DB_NAME)
 
 
 def load_dataframe(input_file: Path) -> pd.DataFrame:
@@ -58,86 +60,41 @@ def create_database_engine():
     return engine
 
 
+def ensure_schema(engine):
+    with engine.begin() as connection:
+        connection.exec_driver_sql((BASE_DIR / "sql" / "schema.sql").read_text(encoding="utf-8"))
+
+
+def insert_rows(df, connection, *, ignore_existing=False):
+    table = Table("portability_cases", MetaData(), schema="public", autoload_with=connection)
+    rows = df.astype(object).where(pd.notna(df), None).to_dict(orient="records")
+    inserted = 0
+    for offset in range(0, len(rows), 500):
+        statement = insert(table).values(rows[offset:offset + 500])
+        if ignore_existing:
+            statement = statement.on_conflict_do_nothing(index_elements=["case_id"])
+        inserted += connection.execute(statement).rowcount
+    return inserted
+
+
 def load_initial(df: pd.DataFrame, engine) -> None:
     with engine.begin() as connection:
-        table_exists = connection.execute(
-            text(
-                """
-                SELECT EXISTS (
-                    SELECT 1
-                    FROM information_schema.tables
-                    WHERE table_schema = 'public'
-                      AND table_name = 'portability_cases'
-                )
-                """
-            )
-        ).scalar()
-
-        if table_exists:
-            connection.execute(
-                text("TRUNCATE TABLE public.portability_cases")
-            )
-            print("Tabla existente vaciada correctamente.")
-
-    df.to_sql(
-        "portability_cases",
-        con=engine,
-        if_exists="append" if table_exists else "replace",
-        index=False,
-        schema="public",
-    )
+        connection.execute(text("TRUNCATE TABLE public.portability_cases"))
+        insert_rows(df, connection)
 
     print("Carga inicial completada.")
 
 
 def load_incremental(df: pd.DataFrame, engine) -> None:
-    with engine.connect() as connection:
-        table_exists = connection.execute(
-            text(
-                """
-                SELECT EXISTS (
-                    SELECT 1
-                    FROM information_schema.tables
-                    WHERE table_schema = 'public'
-                      AND table_name = 'portability_cases'
-                )
-                """
-            )
-        ).scalar()
-
-        if not table_exists:
-            raise RuntimeError(
-                "La tabla portability_cases no existe. "
-                "Ejecutá primero una carga inicial."
-            )
-
-        existing_ids = pd.read_sql(
-            text("SELECT case_id FROM public.portability_cases"),
-            connection,
-        )
-
-    existing_case_ids = set(existing_ids["case_id"])
-
-    new_rows = df[
-        ~df["case_id"].isin(existing_case_ids)
-    ].copy()
-
-    if new_rows.empty:
+    with engine.begin() as connection:
+        inserted = insert_rows(df, connection, ignore_existing=True)
+    if not inserted:
         print("No hay registros nuevos para cargar.")
         return
-
-    new_rows.to_sql(
-        "portability_cases",
-        con=engine,
-        if_exists="append",
-        index=False,
-        schema="public",
-    )
-
-    print(f"Registros nuevos cargados: {len(new_rows)}")
+    print(f"Registros nuevos cargados: {inserted}")
     print(
         "Registros ignorados por estar repetidos: "
-        f"{len(df) - len(new_rows)}"
+        f"{len(df) - inserted}"
     )
 
 
@@ -176,6 +133,7 @@ def main():
 
     df = load_dataframe(args.input)
     engine = create_database_engine()
+    ensure_schema(engine)
 
     if args.mode == "initial":
         load_initial(df, engine)

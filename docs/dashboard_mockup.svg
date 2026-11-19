@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+<rect width="1200" height="675" fill="#F5F7FA"/>
+<rect width="1200" height="96" fill="#142C3E"/>
+<text x="34" y="44" fill="white" font-family="Arial" font-size="27" font-weight="bold">Resumen Operativo</text>
+<text x="35" y="72" fill="#B5CBD9" font-family="Arial" font-size="14">Portabilidad · Datos sintéticos · Estado actual de los trámites</text>
+<g fill="#FFFFFF" stroke="#DDE5EC" stroke-width="2">
+<rect x="32" y="115" width="360" height="45" rx="8"/><rect x="420" y="115" width="360" height="45" rx="8"/><rect x="808" y="115" width="360" height="45" rx="8"/>
+<rect x="32" y="182" width="267" height="110" rx="10"/><rect x="321" y="182" width="267" height="110" rx="10"/><rect x="610" y="182" width="267" height="110" rx="10"/><rect x="899" y="182" width="269" height="110" rx="10"/>
+<rect x="32" y="314" width="557" height="182" rx="10"/><rect x="611" y="314" width="557" height="182" rx="10"/>
+<rect x="32" y="516" width="557" height="135" rx="10"/><rect x="611" y="516" width="557" height="135" rx="10"/>
+</g>
+<g fill="#617483" font-family="Arial" font-size="14"><text x="48" y="144">Período: enero – junio 2023 ▾</text><text x="436" y="144">Canal: todos ▾</text><text x="824" y="144">Equipo: todos ▾</text>
+<text x="49" y="210">Total de casos</text><text x="338" y="210">Abiertos</text><text x="627" y="210">Cerrados</text><text x="916" y="210">Cumplimiento SLA</text></g>
+<g fill="#213547" font-family="Arial" font-size="34" font-weight="bold"><text x="48" y="263">7.500</text><text x="337" y="263">3.676</text><text x="627" y="263">3.824</text><text x="916" y="263">76,5 %</text></g>
+<g font-family="Arial" font-size="16" font-weight="bold" fill="#213547"><text x="49" y="344">Casos recibidos por mes</text><text x="628" y="344">Estado actual</text><text x="49" y="546">Volumen por canal</text><text x="628" y="546">Volumen por equipo</text></g>
+<polyline points="62,455 145,420 228,435 311,395 394,414 477,375 548,390" fill="none" stroke="#2374AB" stroke-width="4"/>
+<g stroke="#DDE5EC"><line x1="62" y1="468" x2="550" y2="468"/><line x1="640" y1="468" x2="1130" y2="468"/></g>
+<g fill="#2374AB"><rect x="648" y="371" width="72" height="97"/><rect x="742" y="392" width="72" height="76"/><rect x="836" y="408" width="72" height="60"/><rect x="930" y="427" width="72" height="41"/><rect x="1024" y="443" width="72" height="25"/></g>
+<g fill="#2374AB"><rect x="49" y="571" width="415" height="12" rx="5"/><rect x="49" y="598" width="334" height="12" rx="5"/><rect x="49" y="625" width="251" height="12" rx="5"/></g>
+<g fill="#19866B"><rect x="628" y="571" width="418" height="12" rx="5"/><rect x="628" y="598" width="350" height="12" rx="5"/><rect x="628" y="625" width="290" height="12" rx="5"/></g>
+<text x="1048" y="633" fill="#617483" font-family="Arial" font-size="12">Maqueta de diseño</text>
+</svg>

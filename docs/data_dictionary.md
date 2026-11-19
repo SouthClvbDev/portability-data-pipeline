@@ -2,7 +2,7 @@
 
 Fuente: `data/sample/portability_cases.csv`. Salida transformada: `data/processed/portability_cases_clean.csv`. Tabla destino: `public.portability_cases`.
 
-Los tipos indican el **significado lógico** de cada columna. Como la carga actual usa `pandas.to_sql`, comprobar los tipos físicos de PostgreSQL con `\d public.portability_cases` si se necesitan para una consulta o integración.
+Los tipos físicos y restricciones se definen en [`sql/schema.sql`](../sql/schema.sql). Se pueden comprobar en PostgreSQL con `\d public.portability_cases`.
 
 | Campo | Tipo lógico | Origen y significado |
 |---|---|---|

@@ -14,7 +14,7 @@ Esta web muestra cómo se construye y evoluciona el pipeline de portabilidad. La
 
 El sitio está hecho con HTML, CSS y JavaScript sin un framework de interfaz. La aplicación de datos principal sigue en Python y PostgreSQL; Vercel aloja una presentación derivada de los CSV, no ejecuta el pipeline completo.
 
-El [dataset de escala completa para Power BI](../docs/full_scale_dataset.md) se genera y distribuye aparte. Sus volúmenes mensuales no son los de las tarjetas o respuestas de esta web, que usan la muestra pequeña versionada.
+El [dataset de escala completa para Power BI](../docs/full_scale_dataset.md) se genera y distribuye aparte. La sección «Análisis con Python» sí usa ese CSV para sus gráficos Matplotlib y publica la fecha de corte. Sus volúmenes no son los de las tarjetas o respuestas del chatbot, que siguen usando la muestra pequeña versionada. La [propuesta de migración completa y escenario 2028](../docs/web_projection_plan.md) explica el siguiente paso.
 
 ## Cómo llegan los datos a la página
 

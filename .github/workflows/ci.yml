@@ -43,5 +43,7 @@ jobs:
           python src/generate_full_scale_data.py --start 2023-02-02 --as-of 2023-02-04T12:00:00 --output /tmp/portability_full_delta_ci.csv.gz
           python -m src.load_full_scale_to_postgres --mode sync --input /tmp/portability_full_delta_ci.csv.gz
           python -c 'from pathlib import Path; from src.load_full_scale_to_postgres import load; result = load(Path("/tmp/portability_full_delta_ci.csv.gz"), mode="sync"); assert result["inserted"] == result["updated"] == 0, result'
+      - name: Verificar agregación desde el CSV completo
+        run: python -c 'from pathlib import Path; from src.analyze_full_scale_data import analyze; result=analyze(Path("/tmp/portability_full_ci.csv.gz")); assert result["total"] == sum(month["cases"] for month in result["monthly"]); assert result["total"] == sum(day["cases"] for day in result["daily"])'
       - name: Verificar que la demo no altera archivos versionados
         run: git diff --exit-code

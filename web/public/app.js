@@ -197,6 +197,9 @@ async function ask(question) {
 $('#chat-form').addEventListener('submit', (event) => { event.preventDefault(); const input = $('#question'); const question = input.value.trim(); if (question) { input.value = ''; ask(question); } });
 document.querySelectorAll('[data-question]').forEach((button) => button.addEventListener('click', () => { $('#question').value = button.dataset.question; $('#question').focus(); }));
 loadData();
+fetch('/data/full-scale-analysis.json').then(response => response.json()).then(data => {
+  $('#python-cutoff').textContent = `${number(data.total)} trámites del 2023-01-01 al ${data.asOf.replace('T', ' ')} (Argentina)`;
+}).catch(() => { $('#python-cutoff').textContent = 'Fecha de corte no disponible'; });
 loadScenarios();
 loadReport();
 loadHistory();

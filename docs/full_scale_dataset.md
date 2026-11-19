@@ -62,4 +62,4 @@ GROUP BY 1 ORDER BY 1;
 3. Revisar la tabla `Calendario`: si termina en junio de 2023, extenderla hasta el máximo `received_date` de la nueva tabla. Mantener la relación `Calendario[Date]` → casos `[received_date]` y el orden cronológico de año-mes.
 4. Actualizar, comparar el total y varios meses con el manifiesto/SQL y revisar los visuales de las tres páginas. El mes actual es parcial. Las medidas T1/T2 de 2023 siguen representando esos trimestres; ampliar su alcance sería una decisión aparte.
 
-El PBIX no se modifica mediante estos scripts. El portfolio web sigue mostrando su muestra pequeña y lo dice explícitamente; sus tarjetas y chatbot no deben confundirse con los totales de este dataset completo.
+El PBIX no se modifica mediante estos scripts. La web incluye ahora un [análisis exploratorio hecho con Python y Matplotlib](web_projection_plan.md) sobre el CSV completo. Sus tarjetas y chatbot siguen usando la muestra pequeña y lo dicen explícitamente; no deben confundirse con los totales de este dataset completo.

@@ -4,7 +4,7 @@
 
 Proyecto de portfolio orientado a un perfil **Data Developer**, basado en un escenario operativo de trámites de portabilidad gestionados por un área de Backoffice.
 
-El proyecto implementa un pipeline reproducible que genera datos sintéticos, valida reglas de calidad, transforma la información, carga PostgreSQL, crea una capa analítica SQL y alimenta un dashboard interactivo en Power BI. Una muestra diaria versionada permite que el portfolio web crezca con cada actualización.
+El proyecto implementa un pipeline reproducible que genera datos sintéticos, valida reglas de calidad, transforma la información, carga PostgreSQL, crea una capa analítica SQL y alimenta un dashboard interactivo en Power BI. Una muestra diaria versionada permite que el portfolio web crezca con cada actualización. Un análisis Matplotlib muestra también la evolución del dataset de escala completa, mientras Docker/PostgreSQL sigue disponible para Power BI.
 
 > El repositorio no utiliza información real de clientes, líneas telefónicas ni sistemas de Telecom. Todos los datos son ficticios.
 
@@ -27,6 +27,7 @@ El proyecto implementa un pipeline reproducible que genera datos sintéticos, va
 - SQL
 - pytest
 - Power BI Desktop
+- Matplotlib (análisis visual opcional)
 - Git
 - PowerShell
 
@@ -42,6 +43,8 @@ Lote inicial + incremental + muestra diaria versionada
              PostgreSQL + vistas SQL + pruebas
 
 CSV versionados ──> Build de Vercel ──> Portfolio web + asistente
+CSV escala completa ──> Python/Matplotlib ──> Gráfico web agregado
+CSV escala completa ──> PostgreSQL en Docker ──> Power BI
        ^
        │
 GitHub Actions: generación diaria, validación y commit

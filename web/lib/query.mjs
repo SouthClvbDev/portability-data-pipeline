@@ -70,7 +70,7 @@ export function calculate(spec, records) {
   };
   const partitions = new Map();
   if (spec.groupBy) for (const row of rows) partitions.set(row[spec.groupBy], [...(partitions.get(row[spec.groupBy]) || []), row]);
-  const groups = spec.groupBy ? [...partitions].map(([name, part]) => ({ name, ...metric(part) })).sort((a, b) => b.cases - a.cases) : null;
+  const groups = spec.groupBy ? [...partitions].map(([name, part]) => ({ name, ...metric(part) })).sort((a, b) => spec.groupBy === 'month' ? a.name.localeCompare(b.name) : spec.metric === 'sla' ? (b.rate ?? -1) - (a.rate ?? -1) : b.cases - a.cases) : null;
   return { ...metric(rows), groups };
 }
 

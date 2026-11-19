@@ -2,6 +2,7 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { parse } from 'csv-parse/sync';
+import { buildScenarios } from '../lib/scenarios.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const web = path.join(root, 'web');
@@ -39,12 +40,14 @@ const summary = {
 summary.slaRate = Number((summary.withinSla / summary.closed * 100).toFixed(1));
 await mkdir(path.join(web, 'public/data'), { recursive: true });
 await writeFile(path.join(web, 'public/data/summary.json'), JSON.stringify(summary, null, 2) + '\n');
-await mkdir(path.join(web, 'data'), { recursive: true });
-await writeFile(path.join(web, 'data/records.json'), JSON.stringify(rows.map((row) => ({
+const records = rows.map((row) => ({
   status: row.status,
   channel: row.channel,
   team: row.team,
   month: row.received_at.slice(0, 7),
   resolutionHours: row.resolution_hours === '' ? null : Number(row.resolution_hours)
-}))) + '\n');
+}));
+await mkdir(path.join(web, 'data'), { recursive: true });
+await writeFile(path.join(web, 'data/records.json'), JSON.stringify(records) + '\n');
+await writeFile(path.join(web, 'public/data/scenarios.json'), JSON.stringify(buildScenarios(records), null, 2) + '\n');
 console.log(`Resumen generado: ${summary.total} casos (${summary.period.start} a ${summary.period.end})`);

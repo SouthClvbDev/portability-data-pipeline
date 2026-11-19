@@ -7,8 +7,9 @@ Esta web muestra cómo se construye y evoluciona el pipeline de portabilidad. La
 1. Una introducción al problema operativo y al objetivo del proyecto.
 2. Cinco etapas del flujo: generación, validación, transformación, carga y exploración.
 3. Indicadores de la muestra versionada: total, abiertos, cerrados, SLA, volumen mensual y estados.
-4. Un asistente para preguntas sobre las métricas disponibles.
-5. El estado actual del proyecto y las próximas mejoras, con enlace al repositorio.
+4. Cuatro escenarios guiados: volumen por mes, pendientes por equipo, SLA por canal y rechazos por equipo en mayo. Permiten llevar la misma pregunta al asistente.
+5. Un asistente para preguntas sobre las métricas disponibles.
+6. El estado actual del proyecto y las próximas mejoras, con enlace al repositorio.
 
 El sitio está hecho con HTML, CSS y JavaScript sin un framework de interfaz. La aplicación de datos principal sigue en Python y PostgreSQL; Vercel aloja una presentación derivada de los CSV, no ejecuta el pipeline completo.
 
@@ -26,9 +27,9 @@ flowchart LR
     G --> F
 ```
 
-[`scripts/build-data.mjs`](scripts/build-data.mjs) lee los dos CSV de `../data/sample` y calcula totales por estado, canal, equipo y mes. También calcula abiertos, cerrados y el SLA sintético de 48 horas entre los casos cerrados. Escribe `public/data/summary.json` para la página y `data/records.json` con los campos necesarios para consultas combinadas. Ambos se generan durante el build y se excluyen de Git; el segundo se empaqueta en la función, no se publica como archivo estático.
+[`scripts/build-data.mjs`](scripts/build-data.mjs) lee los dos CSV de `../data/sample` y calcula totales por estado, canal, equipo y mes. También calcula abiertos, cerrados y el SLA sintético de 48 horas entre los casos cerrados. Escribe `public/data/summary.json` para la página, `public/data/scenarios.json` para la demo y `data/records.json` con los campos necesarios para consultas combinadas. Los tres se generan durante el build y se excluyen de Git; el último se empaqueta en la función, no se publica como archivo estático.
 
-[`public/app.js`](public/app.js) carga ese JSON y dibuja las tarjetas y gráficos. La web muestra una **instantánea de cada despliegue**: si cambian los CSV, hay que construir y desplegar nuevamente. Los hitos de la sección «Proyecto vivo» son texto editorial en `public/index.html`; se actualizan manualmente cuando el proyecto avanza. No hay sincronización en tiempo real con PostgreSQL ni con el PBIX.
+[`public/app.js`](public/app.js) carga esos JSON y dibuja las tarjetas, gráficos y escenarios. Los escenarios se definen en [`lib/scenarios.mjs`](lib/scenarios.mjs) y se calculan con el mismo motor de consultas del chat; sus cifras no están escritas a mano en la interfaz. La web muestra una **instantánea de cada despliegue**: si cambian los CSV, hay que construir y desplegar nuevamente. Los hitos de la sección «Proyecto vivo» son texto editorial en `public/index.html`; se actualizan manualmente cuando el proyecto avanza. El [plan de siguientes escenarios](../docs/next_scenarios.md) fija los criterios de evolución. No hay sincronización en tiempo real con PostgreSQL ni con el PBIX.
 
 ## El asistente actual
 
@@ -71,8 +72,9 @@ Existe un límite de **10 intentos de IA por IP y hora por instancia de función
 | `public/app.js` | Tarjetas, gráficos y formulario del chat. |
 | `scripts/build-data.mjs` | Resumen público y registros proyectados privados derivados de los CSV. |
 | `lib/query.mjs` | Interpretación local, filtros, cálculos y respuesta. |
+| `lib/scenarios.mjs` | Definiciones de los cuatro escenarios guiados. |
 | `api/chat.mjs` | Función de Vercel; interpretación opcional con Gemini u OpenAI. |
-| `tests/query.test.mjs` | Pruebas de cruces, SLA, promedio y filtros inválidos. |
+| `tests/*.test.mjs` | Pruebas de cruces, API y consistencia entre escenarios y dataset. |
 
 También hay una entrada [`../api/chat.mjs`](../api/chat.mjs) y [`../vercel.json`](../vercel.json) para desplegar desde la raíz del repositorio. `web/vercel.json` permite desplegar con `web` como directorio raíz. La configuración de la raíz es la usada para resolver el error de detección automática de Python.
 

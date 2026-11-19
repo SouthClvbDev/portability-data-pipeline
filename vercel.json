@@ -3,6 +3,6 @@
   "buildCommand": "npm run build",
   "outputDirectory": "web/public",
   "functions": {
-    "api/chat.mjs": { "includeFiles": "web/public/data/summary.json" }
+    "api/chat.mjs": { "includeFiles": "web/**/data/*.json" }
   }
 }

@@ -143,7 +143,7 @@ La [guía de rediseño](docs/dashboard_design.md) detalla jerarquía, colores y 
 
 ## Portfolio web y asistente
 
-La [web de portfolio](https://portability-data-pipeline.vercel.app/) explica el proyecto por etapas, calcula indicadores a partir de los CSV sintéticos y permite hacer preguntas sobre el resumen. El bot actual responde métricas conocidas mediante reglas y funciona sin LLM; la integración opcional usa `OPENAI_API_KEY` únicamente en la función del servidor. La [documentación de la web](web/README.md) explica su arquitectura, operación, límites y opciones de costo.
+La [web de portfolio](https://portability-data-pipeline.vercel.app/) explica el proyecto por etapas y calcula indicadores desde los CSV sintéticos. El asistente responde preguntas con filtros combinados por mes, estado, canal y equipo; los números se calculan en el servidor. Funciona sin IA y admite interpretación opcional de preguntas con Gemini u OpenAI mediante una clave del servidor. La [documentación de la web](web/README.md) explica arquitectura, operación, límites y opciones de costo.
 
 ## Calidad y pruebas
 
@@ -175,5 +175,5 @@ Las pruebas verifican:
 
 ## Estado
 
-El pipeline, la carga incremental, la capa SQL, el dashboard, la web y las pruebas automatizadas están implementados. CI está configurado en GitHub Actions. Las próximas mejoras posibles son historial de cambios de estado, preguntas con filtros combinados y capturas verificables del dashboard.
+El pipeline, la carga incremental, la capa SQL, el dashboard, la web y las pruebas automatizadas están implementados. CI está configurado en GitHub Actions. Las próximas mejoras posibles son historial de cambios de estado, métricas de motivos y capturas verificables del dashboard.
 

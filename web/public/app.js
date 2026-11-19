@@ -46,6 +46,7 @@ async function ask(question) {
     const response = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, mode: $('#llm').checked ? 'llm' : 'dataset' }) });
     const data = await response.json();
     pending.textContent = data.answer || data.error || 'No pude responder esta vez.';
+    if (data.note) pending.textContent += ` ${data.note}`;
     if (data.llmAvailable === false) $('#llm-state').textContent = '(sin configurar)';
   } catch { pending.textContent = 'No se pudo conectar con el asistente. Revisá el despliegue de la función.'; }
 }

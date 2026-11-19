@@ -39,4 +39,12 @@ const summary = {
 summary.slaRate = Number((summary.withinSla / summary.closed * 100).toFixed(1));
 await mkdir(path.join(web, 'public/data'), { recursive: true });
 await writeFile(path.join(web, 'public/data/summary.json'), JSON.stringify(summary, null, 2) + '\n');
+await mkdir(path.join(web, 'data'), { recursive: true });
+await writeFile(path.join(web, 'data/records.json'), JSON.stringify(rows.map((row) => ({
+  status: row.status,
+  channel: row.channel,
+  team: row.team,
+  month: row.received_at.slice(0, 7),
+  resolutionHours: row.resolution_hours === '' ? null : Number(row.resolution_hours)
+}))) + '\n');
 console.log(`Resumen generado: ${summary.total} casos (${summary.period.start} a ${summary.period.end})`);

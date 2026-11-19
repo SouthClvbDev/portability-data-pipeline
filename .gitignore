@@ -14,4 +14,5 @@ Thumbs.db
 web/node_modules/
 web/.vercel/
 web/public/data/summary.json
+web/data/records.json
 .DS_Store

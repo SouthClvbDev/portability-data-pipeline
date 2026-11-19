@@ -8,8 +8,9 @@ Esta web muestra cómo se construye y evoluciona el pipeline de portabilidad. La
 2. Cinco etapas del flujo: generación, validación, transformación, carga y exploración.
 3. Indicadores de la muestra versionada: total, abiertos, cerrados, SLA, volumen mensual y estados.
 4. Cuatro escenarios guiados: volumen por mes, pendientes por equipo, SLA por canal y rechazos por equipo en mayo. Permiten llevar la misma pregunta al asistente.
-5. Un asistente para preguntas sobre las métricas disponibles.
-6. El estado actual del proyecto y las próximas mejoras, con enlace al repositorio.
+5. Una galería de las tres páginas del Power BI, con capturas reales cuando estén disponibles y un estado pendiente explícito cuando falten.
+6. Un asistente para preguntas sobre las métricas disponibles.
+7. El estado actual del proyecto y las próximas mejoras, con enlace al repositorio.
 
 El sitio está hecho con HTML, CSS y JavaScript sin un framework de interfaz. La aplicación de datos principal sigue en Python y PostgreSQL; Vercel aloja una presentación derivada de los CSV, no ejecuta el pipeline completo.
 
@@ -30,6 +31,10 @@ flowchart LR
 [`scripts/build-data.mjs`](scripts/build-data.mjs) lee los dos CSV de `../data/sample` y calcula totales por estado, canal, equipo y mes. También calcula abiertos, cerrados y el SLA sintético de 48 horas entre los casos cerrados. Escribe `public/data/summary.json` para la página, `public/data/scenarios.json` para la demo y `data/records.json` con los campos necesarios para consultas combinadas. Los tres se generan durante el build y se excluyen de Git; el último se empaqueta en la función, no se publica como archivo estático.
 
 [`public/app.js`](public/app.js) carga esos JSON y dibuja las tarjetas, gráficos y escenarios. Los escenarios se definen en [`lib/scenarios.mjs`](lib/scenarios.mjs) y se calculan con el mismo motor de consultas del chat; sus cifras no están escritas a mano en la interfaz. La web muestra una **instantánea de cada despliegue**: si cambian los CSV, hay que construir y desplegar nuevamente. Los hitos de la sección «Proyecto vivo» son texto editorial en `public/index.html`; se actualizan manualmente cuando el proyecto avanza. El [plan de siguientes escenarios](../docs/next_scenarios.md) fija los criterios de evolución. No hay sincronización en tiempo real con PostgreSQL ni con el PBIX.
+
+### Galería del informe Power BI
+
+[`scripts/build-report.mjs`](scripts/build-report.mjs) crea `public/data/report.json` con las tres páginas de contenido del PBIX. Las imágenes son **opcionales**: solo copia capturas PNG presentes en [`evidence/`](evidence/README.md), donde se explica cómo exportarlas y nombrarlas. La construcción verifica la firma PNG y una resolución mínima de 1200 × 675. Sin capturas, la web indica «Captura pendiente» en cada página. No se generan imágenes simuladas ni se extraen visuales del PBIX automáticamente. Las imágenes fuente se versionan si se desea publicarlas; las copias generadas en `public/report/` se excluyen de Git.
 
 ## El asistente actual
 
@@ -71,6 +76,8 @@ Existe un límite de **10 intentos de IA por IP y hora por instancia de función
 | `public/styles.css` | Diseño adaptable a pantallas grandes y móviles. |
 | `public/app.js` | Tarjetas, gráficos y formulario del chat. |
 | `scripts/build-data.mjs` | Resumen público y registros proyectados privados derivados de los CSV. |
+| `scripts/build-report.mjs` | Manifiesto de páginas y copia de capturas reales del PBIX. |
+| `evidence/` | Capturas exportadas del informe y guía para incorporarlas. |
 | `lib/query.mjs` | Interpretación local, filtros, cálculos y respuesta. |
 | `lib/scenarios.mjs` | Definiciones de los cuatro escenarios guiados. |
 | `api/chat.mjs` | Función de Vercel; interpretación opcional con Gemini u OpenAI. |

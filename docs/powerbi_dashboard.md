@@ -205,3 +205,7 @@ No conviene mezclar cantidad de trámites y porcentaje de SLA en el mismo eje de
 - Agregar navegación entre páginas.
 - Exportar capturas para el README.
 
+## Evidencia para el portfolio web
+
+La web ya incluye una galería para las tres páginas con contenido del PBIX. Para publicar imágenes reales, abrir el informe en Power BI Desktop, revisar que use la muestra sintética y exportar cada página como PNG. Los nombres, resolución mínima y ubicación están en [`web/evidence/README.md`](../web/evidence/README.md). Al construir la web, las páginas sin imagen se identifican como pendientes. El PBIX todavía requiere la revisión de diseño indicada arriba; las capturas deben reflejar el estado real del archivo.
+

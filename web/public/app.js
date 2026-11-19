@@ -97,6 +97,27 @@ async function loadScenarios() {
   } catch { $('#scenario-card').textContent = 'No se pudieron cargar los escenarios. Revisá la construcción del sitio.'; }
 }
 
+async function loadReport() {
+  const grid = $('#report-grid');
+  try {
+    const response = await fetch('/data/report.json');
+    if (!response.ok) throw new Error('No se pudo cargar el informe');
+    const pages = await response.json();
+    grid.replaceChildren();
+    for (const [index, page] of pages.entries()) {
+      const card = element('article', 'report-card');
+      const visual = element('div', 'report-visual');
+      if (page.image) {
+        const link = element('a'); link.href = page.image; link.target = '_blank'; link.rel = 'noopener noreferrer';
+        const image = element('img'); image.src = page.image; image.alt = `Captura real del informe Power BI: ${page.title}`; image.loading = 'lazy';
+        link.append(image); visual.append(link);
+      } else visual.append(element('span', 'report-pending', 'Captura pendiente'));
+      card.append(visual, element('span', 'report-page', `PÁGINA ${String(index + 1).padStart(2, '0')}`), element('h3', '', page.title), element('p', '', page.purpose));
+      grid.append(card);
+    }
+  } catch { grid.textContent = 'No se pudo cargar la galería del informe. Revisá la construcción del sitio.'; }
+}
+
 async function ask(question) {
   message(question, 'user'); const pending = message('Consultando el resumen…', 'bot');
   try {
@@ -112,3 +133,4 @@ $('#chat-form').addEventListener('submit', (event) => { event.preventDefault(); 
 document.querySelectorAll('[data-question]').forEach((button) => button.addEventListener('click', () => { $('#question').value = button.dataset.question; $('#question').focus(); }));
 loadData();
 loadScenarios();
+loadReport();

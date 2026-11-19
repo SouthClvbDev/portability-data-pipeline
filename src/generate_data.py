@@ -4,6 +4,11 @@ from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
 
+if __package__:
+    from .legacy_cohort import close_legacy_cohort
+else:
+    from legacy_cohort import close_legacy_cohort
+
 
 SEED = 42
 NUMBER_OF_RECORDS = 5000
@@ -145,6 +150,7 @@ df["received_at"] = pd.to_datetime(df["received_at"])
 df["closed_at"] = pd.to_datetime(df["closed_at"])
 
 df = df.sort_values("received_at").reset_index(drop=True)
+df = close_legacy_cohort(df)
 
 OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 

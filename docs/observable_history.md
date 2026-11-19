@@ -18,6 +18,7 @@ Un caso recibido y cerrado el mismo día no queda abierto al cierre. Un cierre p
 - [`sql/analytics/03_observable_history.sql`](../sql/analytics/03_observable_history.sql) crea `vw_case_observed_events` (recepción y cierre) y `vw_daily_backlog` (ingresos, cierres y abiertos al cierre de cada día). `scripts/demo.sh` las reconstruye junto con las otras vistas.
 - [`web/lib/history.mjs`](../web/lib/history.mjs) calcula la misma serie desde los CSV versionados. El build publica `web/public/data/history.json` y conserva las fechas necesarias para que el asistente responda «backlog al 2023-05-31».
 - La web permite recorrer los días y llevar la fecha seleccionada al asistente. Las cifras se regeneran con los CSV en cada despliegue.
+- La web ofrece ventanas de 90 días, 12 meses y toda la historia, con límites numéricos visibles del eje vertical. La cohorte base de 2023 tiene cierres sintéticos en vez de permanecer abierta para siempre; véase [historia de los datos](synthetic_story.md).
 
 ## Límite
 

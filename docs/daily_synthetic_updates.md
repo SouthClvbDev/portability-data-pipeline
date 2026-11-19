@@ -1,10 +1,10 @@
 # Actualización sintética diaria
 
-La muestra base conserva los dos lotes originales de 2023. [`src/generate_daily_data.py`](../src/generate_daily_data.py) extiende el proyecto desde el 1 de julio de 2023 hasta la **hora de corte en Argentina**. Los datos siguen siendo ficticios; la fecha de corte significa que la simulación fue generada hasta ese momento, no que exista una fuente operativa en vivo.
+La muestra base conserva los IDs, fechas de ingreso y tamaños de los dos lotes originales de 2023. Sus antiguos pendientes ahora tienen un cierre sintético dentro de 2023, con duraciones variadas de aproximadamente 10 a 181 días; así no permanecen abiertos indefinidamente ni distorsionan el backlog actual. [`src/generate_daily_data.py`](../src/generate_daily_data.py) extiende el proyecto desde el 1 de julio de 2023 hasta la **hora de corte en Argentina**. Los datos siguen siendo ficticios; la fecha de corte significa que la simulación fue generada hasta ese momento, no que exista una fuente operativa en vivo.
 
 ## Cómo funciona
 
-1. Para cada fecha se obtiene una semilla estable a partir del día. La cantidad de casos varía entre días y es menor los fines de semana. Repetir el mismo corte produce los mismos identificadores y atributos.
+1. Para cada fecha se obtiene una semilla estable a partir del día. La cantidad de casos varía entre días y es menor los fines de semana. Repetir el mismo corte produce los mismos identificadores y atributos. La duración de resolución depende de un [perfil operacional sintético](synthetic_story.md) con episodios de congestión y mejoras.
 2. Los IDs `SIM-AAAAMMDD-NNNN` no se cruzan con los `PORT-` de la muestra base.
 3. Cada caso tiene una duración de resolución sintética. Antes de su cierre figura abierto; en un corte posterior puede aparecer aprobado, rechazado o anulado. No se registra cuándo pasó entre estados abiertos.
 4. El generador excluye recepciones y cierres posteriores a la hora de corte. [`data/sample/portability_cases_daily.meta.json`](../data/sample/portability_cases_daily.meta.json) declara esa hora y la cantidad de filas.
@@ -16,7 +16,7 @@ El lote diario se versiona junto con los dos lotes base. La web deriva sus métr
 
 [`daily_data.yml`](../.github/workflows/daily_data.yml) se programa a las **23:00 UTC (20:00 de Argentina)** y también admite ejecución manual con `workflow_dispatch`. Regenera la muestra completa hasta la hora actual. Así recupera días omitidos sin duplicar IDs. Si cambian el CSV o sus metadatos, valida el pipeline y la web, commitea ambos archivos en `main` y los pushea.
 
-El workflow también genera y comprueba el [dataset de escala completa para Power BI](full_scale_dataset.md) con el mismo corte, más un lote incremental con doce días de solapamiento. Los publica como artefacto descargable durante 7 días; esos archivos grandes no se commitean y no alimentan la web.
+El workflow también genera y comprueba el [dataset de escala completa para Power BI](full_scale_dataset.md) con el mismo corte, más un lote incremental con doce días de solapamiento. Los publica como artefacto descargable durante 7 días; esos archivos grandes no se commitean. El análisis Matplotlib de la web sí se deriva de ese dataset; las tarjetas y el chat siguen usando la muestra pequeña.
 
 Una integración Git de Vercel puede desplegar ese push. Si no lo hace, crear un deploy hook de Vercel y guardar su URL como secreto `VERCEL_DEPLOY_HOOK_URL` en GitHub Actions. El workflow llamará al hook después del push. Verificar en Vercel que la fecha mostrada en la web coincide con `daily.meta.json`. Los horarios de GitHub Actions son aproximados y una ejecución puede retrasarse; la siguiente recupera todo el intervalo.
 

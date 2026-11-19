@@ -10,6 +10,11 @@ from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+if __package__:
+    from .operational_profile import resolution_profile
+else:
+    from operational_profile import resolution_profile
+
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 START_DATE = date(2023, 7, 1)
@@ -46,10 +51,11 @@ def generate_rows(start: date, as_of: datetime) -> list[dict]:
         seed = int.from_bytes(hashlib.sha256(f"portability-daily:{current}".encode()).digest()[:8], "big")
         rng = random.Random(seed)
         quantity = rng.randint(6, 16) if current.weekday() < 5 else rng.randint(2, 7)
+        _, resolution_scale = resolution_profile(current)
         for index in range(1, quantity + 1):
             received = datetime.combine(current, time(rng.randint(8, 20), rng.randint(0, 59)))
             planned_status = rng.choices(["Aprobado", "Rechazado", "Anulado"], weights=[67, 22, 11])[0]
-            resolution_hours = round(max(2, min(240, rng.gammavariate(3.0, 12.0))), 2)
+            resolution_hours = round(max(2, min(240, rng.gammavariate(3.0, resolution_scale))), 2)
             planned_close = received + timedelta(hours=resolution_hours)
             pending_status = rng.choice(["En análisis", "Pendiente documentación", "Pendiente contacto"])
             documentation = rng.choice(["Completa", "Incompleta", "No requerida"])
@@ -104,6 +110,7 @@ def write_rows(rows: list[dict], output: Path) -> bool:
 
 def write_metadata(rows: list[dict], as_of: datetime, output: Path) -> bool:
     metadata = {
+        "generatorVersion": "daily-v2-operational-profile",
         "asOf": as_of.isoformat(timespec="seconds"),
         "timezone": "America/Argentina/Buenos_Aires",
         "start": START_DATE.isoformat(),

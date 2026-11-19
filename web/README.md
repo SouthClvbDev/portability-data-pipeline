@@ -6,7 +6,7 @@ Esta web muestra cómo se construye y evoluciona el pipeline de portabilidad. La
 
 1. Una introducción al problema operativo y al objetivo del proyecto.
 2. Cinco etapas del flujo: generación, validación, transformación, carga y exploración.
-3. Indicadores de la muestra versionada: total, abiertos, cerrados, SLA, volumen mensual y estados. Un gráfico permite seleccionar una fecha y ver el backlog al cierre del día.
+3. Indicadores de la muestra versionada: total, abiertos, cerrados, SLA, volumen mensual y estados. Un gráfico permite seleccionar una fecha y ver el backlog al cierre del día, con ventanas de 90 días, 12 meses o toda la historia.
 4. Cuatro escenarios guiados: volumen por mes, pendientes por equipo, SLA por canal y rechazos por equipo en mayo de 2023. Permiten llevar la misma pregunta al asistente.
 5. Una galería de las tres páginas del Power BI, con capturas reales cuando estén disponibles y un estado pendiente explícito cuando falten.
 6. Un asistente para preguntas sobre las métricas disponibles, incluido backlog a una fecha.
@@ -14,7 +14,7 @@ Esta web muestra cómo se construye y evoluciona el pipeline de portabilidad. La
 
 El sitio está hecho con HTML, CSS y JavaScript sin un framework de interfaz. La aplicación de datos principal sigue en Python y PostgreSQL; Vercel aloja una presentación derivada de los CSV, no ejecuta el pipeline completo.
 
-El [dataset de escala completa para Power BI](../docs/full_scale_dataset.md) se genera y distribuye aparte. La sección «Análisis con Python» sí usa ese CSV para sus gráficos Matplotlib y publica la fecha de corte. Sus volúmenes no son los de las tarjetas o respuestas del chatbot, que siguen usando la muestra pequeña versionada. La [propuesta de migración completa y escenario 2028](../docs/web_projection_plan.md) explica el siguiente paso.
+El [dataset de escala completa para Power BI](../docs/full_scale_dataset.md) se genera y distribuye aparte. La sección «Análisis con Python» sí usa ese CSV para sus gráficos Matplotlib, muestra meses de mayor y menor SLA calculados y publica la fecha de corte. La [historia operacional sintética](../docs/synthetic_story.md) explica las demoras y mejoras simuladas. Sus volúmenes no son los de las tarjetas o respuestas del chatbot, que siguen usando la muestra pequeña versionada. La [propuesta de migración completa y escenario 2028](../docs/web_projection_plan.md) explica el siguiente paso.
 
 ## Cómo llegan los datos a la página
 

@@ -12,6 +12,8 @@ Este dataset es **independiente de la muestra pequeña que usa el portfolio web 
 
 Las semillas dependen del año, mes y día. Repetir el mismo `--as-of` produce el mismo CSV comprimido, los mismos IDs y las mismas cifras. Los casos recientes pueden pasar de abiertos a cerrados en un corte posterior; las fechas de cierre nunca superan el corte.
 
+Las duraciones ya no siguen una única distribución constante: el [perfil operacional sintético](synthetic_story.md) representa meses de congestión y etapas de mejora. Por eso el SLA de 48 horas varía entre cohortes mensuales sin cambiar la regla del indicador ni el rango de volumen solicitado. Son escenarios de prueba diseñados para explorar decisiones; no describen episodios reales.
+
 ## Archivos y generación
 
 ```bash

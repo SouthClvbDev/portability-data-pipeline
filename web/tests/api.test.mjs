@@ -4,6 +4,9 @@ import { readFile } from 'node:fs/promises';
 import handler from '../api/chat.mjs';
 
 const summary = JSON.parse(await readFile(new URL('../public/data/summary.json', import.meta.url)));
+const records = JSON.parse(await readFile(new URL('../data/records.json', import.meta.url)));
+const mayRejections = records.filter(row => row.month === '2023-05' && row.status === 'Rechazado');
+const northRejections = mayRejections.filter(row => row.team === 'Backoffice Norte').length;
 
 const invoke = async (question, mode = 'dataset') => {
   let result;
@@ -15,8 +18,8 @@ const invoke = async (question, mode = 'dataset') => {
 test('la función responde un cruce calculado del dataset', async () => {
   const result = await invoke('¿Qué equipo tuvo más rechazos en mayo 2023?');
   assert.equal(result.code, 200);
-  assert.equal(result.result.cases, 92);
-  assert.match(result.answer, /Backoffice Norte: 31/);
+  assert.equal(result.result.cases, mayRejections.length);
+  assert.equal(result.result.groups.find(group => group.name === 'Backoffice Norte').cases, northRejections);
 });
 
 test('la IA solo interpreta filtros; el servidor calcula el resultado', async () => {
@@ -27,8 +30,8 @@ test('la IA solo interpreta filtros; el servidor calcula el resultado', async ()
   try {
     const result = await invoke('¿Qué equipo tuvo más rechazos en mayo 2023?', 'llm');
     assert.equal(result.source, 'interpreted:gemini');
-    assert.equal(result.result.cases, 92);
-    assert.match(result.answer, /Backoffice Norte: 31/);
+    assert.equal(result.result.cases, mayRejections.length);
+    assert.equal(result.result.groups.find(group => group.name === 'Backoffice Norte').cases, northRejections);
   } finally {
     globalThis.fetch = originalFetch;
     if (originalKey === undefined) delete process.env.GEMINI_API_KEY;

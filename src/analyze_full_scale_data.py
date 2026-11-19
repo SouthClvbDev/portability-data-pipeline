@@ -9,6 +9,11 @@ from collections import Counter
 from datetime import date, timedelta
 from pathlib import Path
 
+if __package__:
+    from .operational_profile import resolution_profile
+else:
+    from operational_profile import resolution_profile
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_INPUT = ROOT / "data/generated/portability_cases_full.csv.gz"
@@ -51,7 +56,8 @@ def analyze(source: Path) -> dict:
         observed = sum(value for day, value in daily.items() if day.startswith(month))
         if observed != entry["actual"]:
             raise ValueError(f"Volumen mensual inconsistente: {month}")
-        months.append({"month": month, "cases": observed, "category": entry["category"],
+        episode, _ = resolution_profile(date.fromisoformat(month + "-01"), entry["category"])
+        months.append({"month": month, "cases": observed, "category": entry["category"], "episode": episode,
                        "complete": entry["complete"], "closed": closed[month], "withinSla": within[month],
                        "slaRate": round(100 * within[month] / closed[month], 1) if closed[month] else None})
     first = date.fromisoformat(manifest["start"])
@@ -68,8 +74,14 @@ def analyze(source: Path) -> dict:
             rolling -= window.pop(0)
         days.append({"date": current.isoformat(), "cases": value, "average7d": round(rolling / len(window), 1)})
         current += timedelta(days=1)
+    complete = [month for month in months if month["complete"]]
     return {"source": "CSV sintético de escala completa", "asOf": manifest["asOf"],
-            "timezone": manifest["timezone"], "total": total, "monthly": months, "daily": days}
+            "timezone": manifest["timezone"], "total": total, "monthly": months, "daily": days,
+            "insights": {
+                "lowestSla": min(complete, key=lambda month: month["slaRate"]),
+                "highestSla": max(complete, key=lambda month: month["slaRate"]),
+                "highestVolume": max(complete, key=lambda month: month["cases"]),
+            }}
 
 
 def plot(analysis: dict, output: Path) -> None:
@@ -80,7 +92,7 @@ def plot(analysis: dict, output: Path) -> None:
 
     months = analysis["monthly"]
     days = analysis["daily"]
-    plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 10, "svg.fonttype": "none"})
+    plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 10, "svg.fonttype": "none", "svg.hashsalt": "portability-analysis-v2"})
     fig, axes = plt.subplots(3, 1, figsize=(13, 11), constrained_layout=True)
     fig.patch.set_facecolor("#f7f9f6")
     for ax in axes:
@@ -106,11 +118,19 @@ def plot(analysis: dict, output: Path) -> None:
     axes[2].set_ylabel("% de casos resueltos")
     axes[2].set_ylim(0, 100)
     axes[2].set_xticks(range(0, len(complete), 3), [complete[i]["month"] for i in range(0, len(complete), 3)], rotation=45, ha="right")
+    lowest = min(enumerate(complete), key=lambda pair: pair[1]["slaRate"])
+    highest = max(enumerate(complete), key=lambda pair: pair[1]["slaRate"])
+    for (index, month), color, offset in [(lowest, "#b6692e", 15), (highest, "#0c9b87", -24)]:
+        axes[2].scatter([index], [month["slaRate"]], color=color, s=55, zorder=4)
+        axes[2].annotate(f"{month['month']}: {month['slaRate']} %\n{month['episode']}",
+                         (index, month["slaRate"]), xytext=(0, offset), textcoords="offset points",
+                         ha="center", va="bottom" if offset > 0 else "top", fontsize=8, color=color)
     fig.suptitle("Portabilidad sintética · análisis exploratorio con Python y Matplotlib", fontsize=16, weight="bold")
     fig.text(.01, .002, f"Fuente: CSV sintético · Corte: {analysis['asOf']} (Argentina) · El mes en curso es parcial · No son datos reales", fontsize=9)
     output.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output, format="svg", facecolor=fig.get_facecolor())
+    fig.savefig(output, format="svg", facecolor=fig.get_facecolor(), metadata={"Date": None}, bbox_inches="tight", pad_inches=.25)
     plt.close(fig)
+    output.write_text("\n".join(line.rstrip() for line in output.read_text(encoding="utf-8").splitlines()) + "\n", encoding="utf-8")
 
 
 def main() -> None:

@@ -15,6 +15,11 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+if __package__:
+    from .operational_profile import resolution_profile
+else:
+    from operational_profile import resolution_profile
+
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = BASE_DIR / "data/generated/portability_cases_full.csv.gz"
@@ -85,10 +90,12 @@ def month_range(start: date, end: date):
 
 def records_for_day(current: date, count: int, as_of: datetime):
     rng = random.Random(seed_for("cases", current.isoformat()))
+    volume_category, _ = month_profile(current.year, current.month)
+    _, resolution_scale = resolution_profile(current, volume_category)
     for index in range(1, count + 1):
         received = datetime(current.year, current.month, current.day, rng.randint(8, 20), rng.randint(0, 59), rng.randint(0, 59))
         final_status = rng.choices(["Aprobado", "Rechazado", "Anulado"], weights=[67, 22, 11])[0]
-        resolution = round(max(2, min(240, rng.gammavariate(3.0, 12.0))), 2)
+        resolution = round(max(2, min(240, rng.gammavariate(3.0, resolution_scale))), 2)
         planned_close = received + timedelta(hours=resolution)
         open_status = rng.choice(["En análisis", "Pendiente documentación", "Pendiente contacto"])
         documentation = rng.choice(["Completa", "Incompleta", "No requerida"])
@@ -149,6 +156,7 @@ def generate(start: date, as_of: datetime, output: Path) -> dict:
                     writer.writeheader()
                     for year, month in month_range(start, as_of.date()):
                         category, target, daily_counts = daily_plan(year, month)
+                        episode, scale = resolution_profile(date(year, month, 1), category)
                         actual = 0
                         for day, count in enumerate(daily_counts, start=1):
                             current = date(year, month, day)
@@ -162,7 +170,7 @@ def generate(start: date, as_of: datetime, output: Path) -> dict:
                                 first_received = row["received_at"] if first_received is None or row["received_at"] < first_received else first_received
                                 last_received = row["received_at"] if last_received is None or row["received_at"] > last_received else last_received
                         full_start = (year, month) != (start.year, start.month) or start.day == 1
-                        monthly.append({"month": f"{year:04d}-{month:02d}", "category": category, "plannedFullMonth": target, "actual": actual, "complete": full_start and (year, month) < (as_of.year, as_of.month)})
+                        monthly.append({"month": f"{year:04d}-{month:02d}", "category": category, "plannedFullMonth": target, "actual": actual, "complete": full_start and (year, month) < (as_of.year, as_of.month), "operationalEpisode": episode, "resolutionScaleHours": scale})
         with temp.open("rb") as generated_file:
             digest = hashlib.file_digest(generated_file, "sha256").hexdigest()
         same = False
@@ -177,6 +185,7 @@ def generate(start: date, as_of: datetime, output: Path) -> dict:
         if temp.exists():
             temp.unlink()
     return {
+        "generatorVersion": "full-v2-operational-profile",
         "asOf": as_of.isoformat(timespec="seconds"),
         "timezone": "America/Argentina/Buenos_Aires",
         "start": start.isoformat(),

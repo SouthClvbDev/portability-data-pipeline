@@ -51,3 +51,13 @@ def test_versioned_daily_batch_matches_its_cutoff_and_base_ids():
     assert daily["case_id"].is_unique
     assert not set(daily["case_id"]) & (base_ids | incremental_ids)
     assert daily["received_at"].max().replace(" ", "T") <= metadata["asOf"]
+
+
+def test_legacy_2023_cohorts_are_resolved_instead_of_remaining_open_forever():
+    root = Path(__file__).resolve().parents[1] / "data/sample"
+    for name in ("portability_cases.csv", "portability_cases_incremental.csv"):
+        frame = pd.read_csv(root / name)
+        assert frame["closed_at"].notna().all()
+        assert frame["resolution_hours"].notna().all()
+        assert (pd.to_datetime(frame["closed_at"]) >= pd.to_datetime(frame["received_at"])).all()
+        assert pd.to_datetime(frame["closed_at"]).max() < pd.Timestamp("2024-01-01")

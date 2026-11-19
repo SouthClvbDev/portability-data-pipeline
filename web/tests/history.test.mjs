@@ -14,6 +14,9 @@ test('el historial diario conserva ingresos, cierres y backlog final', async () 
   assert.equal(history.series.reduce((sum, entry) => sum + entry.closed, 0), summary.closed);
   assert.equal(history.series.at(-1).open, summary.open);
   assert.ok(history.series.every(entry => entry.open >= 0));
+  const recent = history.series.slice(-365).map(entry => entry.open);
+  assert.ok(Math.max(...recent) - Math.min(...recent) >= 20, 'el último año debe mostrar variación de backlog');
+  assert.ok(summary.open < 100, 'la cohorte de 2023 ya no debe inflar el backlog actual');
 });
 
 test('el asistente calcula la fecha de corte con las mismas fechas', async () => {

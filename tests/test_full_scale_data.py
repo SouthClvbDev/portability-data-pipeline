@@ -5,7 +5,7 @@ from datetime import date, datetime
 
 import pytest
 
-from src.generate_full_scale_data import FIELDS, daily_plan, generate, month_profile
+from src.generate_full_scale_data import FIELDS, daily_plan, generate, month_profile, records_for_day
 from src.load_full_scale_to_postgres import load
 
 
@@ -24,6 +24,15 @@ def test_monthly_bands_and_daily_allocation_are_reproducible():
             categories.append(category)
         assert categories.count("pico_positivo") == 1
         assert categories.count("pico_negativo") == 1
+
+
+def test_operational_episodes_create_visible_sla_change_without_invalid_closures():
+    slow = list(records_for_day(date(2024, 5, 15), 2000, datetime(2024, 6, 1)))
+    improved = list(records_for_day(date(2025, 8, 15), 2000, datetime(2025, 9, 1)))
+    def rate(rows):
+        assert all(row["closed_at"] and row["resolution_hours"] for row in rows)
+        return sum(row["sla_status"] == "Dentro de SLA" for row in rows) / len(rows)
+    assert rate(improved) - rate(slow) > .4
 
 
 def test_compressed_dataset_has_correct_schema_cutoff_and_stable_bytes(tmp_path):

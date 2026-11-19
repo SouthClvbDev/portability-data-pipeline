@@ -130,23 +130,39 @@ async function loadHistory() {
       for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
       return node;
     };
-    const peak = Math.max(...series.map(day => day.open), 1);
-    const point = (index) => ({ x: 15 + index / Math.max(series.length - 1, 1) * 770, y: 160 - series[index].open / peak * 135 });
-    chart.append(svg('line', { x1: 15, y1: 160, x2: 785, y2: 160, stroke: '#c7d9d3' }));
-    chart.append(svg('polyline', { points: series.map((_, index) => { const { x, y } = point(index); return `${x},${y}`; }).join(' '), fill: 'none', stroke: '#0c9b87', 'stroke-width': 3, 'stroke-linejoin': 'round' }));
-    const marker = svg('circle', { r: 6, fill: '#102a36', stroke: '#fff', 'stroke-width': 2 }); chart.append(marker);
-    const slider = $('#history-day'); slider.max = String(series.length - 1); slider.value = slider.max; slider.disabled = false;
-    const ask = $('#history-ask'); ask.disabled = false;
-    const select = () => {
-      const entry = series[Number(slider.value)];
-      const { x, y } = point(Number(slider.value)); marker.setAttribute('cx', x); marker.setAttribute('cy', y);
-      $('#history-open').textContent = number(entry.open);
-      $('#history-date').textContent = `al cierre del ${entry.date}`;
-      $('#history-detail').textContent = `Ese día ingresaron ${number(entry.received)} casos y cerraron ${number(entry.closed)}.`;
-      chart.setAttribute('aria-label', `Casos abiertos diarios del ${series[0].date} al ${series.at(-1).date}; fecha seleccionada ${entry.date}: ${entry.open} abiertos.`);
+    const slider = $('#history-day');
+    const range = $('#history-range');
+    const ask = $('#history-ask');
+    let visible = [];
+    const draw = () => {
+      visible = series.slice(-Math.min(series.length, range.value === 'all' ? series.length : Number(range.value)));
+      const values = visible.map(day => day.open);
+      const minimum = Math.min(...values);
+      const maximum = Math.max(...values);
+      const lower = Math.max(0, Math.floor(minimum * 0.9));
+      const upper = Math.max(lower + 1, Math.ceil(maximum * 1.08));
+      const point = (index) => ({ x: 42 + index / Math.max(visible.length - 1, 1) * 743, y: 155 - (visible[index].open - lower) / (upper - lower) * 125 });
+      chart.replaceChildren();
+      for (const [value, y] of [[upper, 30], [lower, 155]]) {
+        chart.append(svg('line', { x1: 42, y1: y, x2: 785, y2: y, stroke: '#dbe7e5' }));
+        const label = svg('text', { x: 36, y: y + 4, 'text-anchor': 'end', fill: '#61737b', 'font-size': 10 });
+        label.textContent = number(value); chart.append(label);
+      }
+      chart.append(svg('polyline', { points: visible.map((_, index) => { const { x, y } = point(index); return `${x},${y}`; }).join(' '), fill: 'none', stroke: '#0c9b87', 'stroke-width': 2.5, 'stroke-linejoin': 'round' }));
+      const marker = svg('circle', { r: 6, fill: '#102a36', stroke: '#fff', 'stroke-width': 2 }); chart.append(marker);
+      slider.max = String(visible.length - 1); slider.value = slider.max; slider.disabled = false; ask.disabled = false;
+      const select = () => {
+        const entry = visible[Number(slider.value)];
+        const { x, y } = point(Number(slider.value)); marker.setAttribute('cx', x); marker.setAttribute('cy', y);
+        $('#history-open').textContent = number(entry.open);
+        $('#history-date').textContent = `al cierre del ${entry.date}`;
+        $('#history-detail').textContent = `Ese día ingresaron ${number(entry.received)} casos y cerraron ${number(entry.closed)}. Escala visible: ${number(lower)} a ${number(upper)} abiertos.`;
+        chart.setAttribute('aria-label', `Casos abiertos diarios del ${visible[0].date} al ${visible.at(-1).date}, escala ${lower} a ${upper}; fecha seleccionada ${entry.date}: ${entry.open} abiertos.`);
+      };
+      slider.oninput = select; select();
     };
-    slider.addEventListener('input', select); select();
-    ask.addEventListener('click', () => { $('#question').value = `¿Cuál era el backlog al ${series[Number(slider.value)].date}?`; $('#asistente').scrollIntoView({ behavior: 'smooth' }); $('#question').focus({ preventScroll: true }); });
+    range.addEventListener('change', draw); draw();
+    ask.addEventListener('click', () => { $('#question').value = `¿Cuál era el backlog al ${visible[Number(slider.value)].date}?`; $('#asistente').scrollIntoView({ behavior: 'smooth' }); $('#question').focus({ preventScroll: true }); });
   } catch { $('#history-detail').textContent = 'No se pudo cargar la evolución diaria. Revisá la construcción del sitio.'; }
 }
 
@@ -199,6 +215,16 @@ document.querySelectorAll('[data-question]').forEach((button) => button.addEvent
 loadData();
 fetch('/data/full-scale-analysis.json').then(response => response.json()).then(data => {
   $('#python-cutoff').textContent = `${number(data.total)} trámites del 2023-01-01 al ${data.asOf.replace('T', ' ')} (Argentina)`;
+  const cards = [
+    ['Mayor demora', data.insights.lowestSla, `${data.insights.lowestSla.slaRate.toLocaleString('es-AR')} % dentro de SLA`, data.insights.lowestSla.episode],
+    ['Mejor cumplimiento', data.insights.highestSla, `${data.insights.highestSla.slaRate.toLocaleString('es-AR')} % dentro de SLA`, data.insights.highestSla.episode],
+    ['Mayor volumen', data.insights.highestVolume, `${number(data.insights.highestVolume.cases)} trámites`, data.insights.highestVolume.category.replace('_', ' ')]
+  ];
+  for (const [title, month, value, detail] of cards) {
+    const card = element('article');
+    card.append(element('span', '', title), element('strong', '', value), element('small', '', `${month.month} · ${detail}`));
+    $('#python-insights').append(card);
+  }
 }).catch(() => { $('#python-cutoff').textContent = 'Fecha de corte no disponible'; });
 loadScenarios();
 loadReport();

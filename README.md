@@ -143,7 +143,7 @@ La [guía de rediseño](docs/dashboard_design.md) detalla jerarquía, colores y 
 
 ## Portfolio web y asistente
 
-[`web/`](web/) contiene una web para Vercel que explica el proyecto por etapas, calcula indicadores a partir de los CSV sintéticos y permite hacer preguntas sobre el resumen. Funciona sin LLM; la integración opcional usa `OPENAI_API_KEY` únicamente en la función del servidor. [Guía de despliegue y límites](web/README.md).
+La [web de portfolio](https://portability-data-pipeline.vercel.app/) explica el proyecto por etapas, calcula indicadores a partir de los CSV sintéticos y permite hacer preguntas sobre el resumen. El bot actual responde métricas conocidas mediante reglas y funciona sin LLM; la integración opcional usa `OPENAI_API_KEY` únicamente en la función del servidor. La [documentación de la web](web/README.md) explica su arquitectura, operación, límites y opciones de costo.
 
 ## Calidad y pruebas
 
@@ -156,7 +156,7 @@ Las pruebas verifican:
 - clasificación del SLA;
 - conexión y cantidad de registros en PostgreSQL;
 - consistencia entre tabla base y vistas;
-- existencia de las seis vistas analíticas.
+- existencia de las seis vistas analíticas;
 - restricciones de unicidad y estados en PostgreSQL.
 
 ## Documentación
@@ -171,8 +171,9 @@ Las pruebas verifican:
 - [`docs/technical_decisions.md`](docs/technical_decisions.md)
 - [`docs/demo_video_plan.md`](docs/demo_video_plan.md)
 - [`docs/release_v1.0.md`](docs/release_v1.0.md)
+- [`web/README.md`](web/README.md)
 
 ## Estado
 
-El pipeline, la carga incremental, la capa SQL, el dashboard y las pruebas automatizadas están implementados. Las próximas mejoras posibles son CI, historial de cambios de estado y capturas verificables del dashboard.
+El pipeline, la carga incremental, la capa SQL, el dashboard, la web y las pruebas automatizadas están implementados. CI está configurado en GitHub Actions. Las próximas mejoras posibles son historial de cambios de estado, preguntas con filtros combinados y capturas verificables del dashboard.
 

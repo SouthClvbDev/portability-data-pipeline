@@ -1,13 +1,13 @@
 # Diccionario de datos
 
-Fuente: `data/sample/portability_cases.csv`. Salida transformada: `data/processed/portability_cases_clean.csv`. Tabla destino: `public.portability_cases`.
+Fuentes: los dos lotes base y `data/sample/portability_cases_daily.csv`. Cada uno se transforma con el mismo esquema de 21 columnas y se carga en `public.portability_cases`.
 
 Los tipos físicos y restricciones se definen en [`sql/schema.sql`](../sql/schema.sql). Se pueden comprobar en PostgreSQL con `\d public.portability_cases`.
 
 | Campo | Tipo lógico | Origen y significado |
 |---|---|---|
-| `case_id` | Texto | ID ficticio único, formato `PORT-000001`. |
-| `received_at` | Fecha y hora | Recepción del trámite; generado entre enero y marzo de 2023. |
+| `case_id` | Texto | ID ficticio único: `PORT-000001` en la base o `SIM-AAAAMMDD-NNNN` en la extensión diaria. |
+| `received_at` | Fecha y hora | Recepción del trámite; desde enero de 2023 hasta la hora de corte de la simulación. |
 | `closed_at` | Fecha y hora, opcional | Cierre de un caso finalizado; vacío para casos abiertos. |
 | `status` | Categoría | Estado actual del trámite. |
 | `channel` | Categoría | Canal de ingreso: Web, App, Sucursal, Call Center o Distribuidor. |

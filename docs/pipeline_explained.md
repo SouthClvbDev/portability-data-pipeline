@@ -234,6 +234,8 @@ Registros nuevos: 0
 Total: 7.500
 ```
 
+> Las cifras de los dos lotes originales sirven como ejemplo histórico. La [extensión sintética diaria](daily_synthetic_updates.md) aumenta los registros y la fecha máxima del proyecto actual.
+
 ## 10. Etapa 7: capa analítica SQL
 
 PostgreSQL contiene las siguientes vistas:
@@ -286,7 +288,7 @@ Las vistas agregadas se conservan como capa SQL de consulta y validación, pero 
 
 ## 12. Etapa 9: pruebas automatizadas
 
-El proyecto contiene 26 pruebas con pytest.
+El proyecto contiene 31 pruebas con pytest.
 
 ### Pruebas del pipeline: 16
 
@@ -300,25 +302,30 @@ Validan:
 - compatibilidad de los lotes;
 - ausencia de IDs compartidos.
 
-### Pruebas de PostgreSQL: 10
+### Pruebas de la extensión diaria: 4
+
+Verifican que el mismo corte reproduce las mismas filas, no crea fechas futuras, conserva los atributos del caso al cerrarlo y no cruza IDs con la base.
+
+### Pruebas de PostgreSQL: 11
 
 Validan:
 
 - conexión a la base;
-- 7.500 registros;
+- total igual a los tres CSV versionados;
 - IDs únicos;
 - consistencia de la vista KPI;
 - abiertos más cerrados igual a total;
 - métricas mensuales y existencia de vistas.
 - reconciliación de eventos observables y backlog final con la tabla base.
+- sincronización idempotente de las filas del lote diario.
 
 Resultado actual:
 
 ```text
-26 passed
+31 passed
 ```
 
-## 13. Resultados del pipeline
+## 13. Resultados de los dos lotes base
 
 | Indicador | Resultado |
 |---|---:|
@@ -328,9 +335,11 @@ Resultado actual:
 | Duplicados | 0 |
 | Período | enero-junio 2023 |
 | Columnas analíticas | 21 |
-| Vistas SQL | 6 |
-| Pruebas | 24 exitosas |
+| Vistas SQL actuales | 8 |
+| Pruebas actuales | 31 exitosas |
 | Páginas de Power BI | 3 |
+
+La [extensión diaria](daily_synthetic_updates.md) agrega registros después de junio de 2023 y hace que el total actual de PostgreSQL y la web sea mayor que el de esta tabla base.
 
 KPI generales del dataset:
 

@@ -7,7 +7,7 @@ test('cada etapa del recorrido enlaza evidencia presente en el repositorio', asy
   assert.ok(stages.length >= 5);
   for (const stage of stages) {
     assert.ok(stage.title && stage.question && stage.result);
-    assert.match(stage.evidence, /^(src|sql|web)\//);
+    assert.match(stage.evidence, /^(src|sql|web|\.github)\//);
     await access(new URL(`../../${stage.evidence}`, import.meta.url));
   }
 });

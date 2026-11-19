@@ -6,7 +6,8 @@
 | Python y pandas | Hacen visibles generación, validación y transformación. | Para volúmenes mayores convendría procesar por lotes o en SQL. |
 | PostgreSQL 16 en Docker | Reproduce una base relacional y permite comprobar restricciones e indicadores. | Docker y el puerto 5432 son requisitos de la demo local. |
 | Clave primaria y `ON CONFLICT` | Garantizan unicidad e idempotencia de la carga incremental. | Los lotes de 500 filas no reemplazan `COPY` y staging a gran escala. |
-| `TRUNCATE` dentro de la transacción | Reconstruye la muestra conservando las vistas existentes. | Reemplaza los 7.500 casos de la demo, no sirve como estrategia de actualización histórica. |
+| `TRUNCATE` dentro de la transacción | Reconstruye la muestra conservando las vistas existentes. | Reemplaza la tabla local durante la demo; no conserva versiones pasadas de cada fila. |
+| Lote diario estable por fecha y `sync` | Agrega casos sin duplicados y refleja cierres posteriores. | La instantánea versionada no guarda todas las transiciones; GitHub y Vercel deben desplegar la nueva versión. |
 | Tabla detallada en Power BI | Mantiene la interacción coherente de los filtros de fecha, equipo y canal. | Las vistas agregadas se usan para consultas y validación, no para relaciones del modelo. |
 | Importar en Power BI | Respuesta rápida con un conjunto pequeño y local. | Requiere actualizar el PBIX tras reconstruir PostgreSQL. |
 

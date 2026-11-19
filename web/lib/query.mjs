@@ -14,7 +14,9 @@ export function interpret(question, records) {
   else if (/promedio|media|tiempo medio/.test(q) && /resolucion|horas|demora/.test(q)) spec.metric = 'average_resolution';
   const month = Object.entries(months).find(([name]) => new RegExp(`\\b${name}\\b`).test(q));
   const numericMonth = q.match(/\b(20\d{2})[-/](0?[1-9]|1[0-2])\b/);
+  const namedYear = q.match(/\b20\d{2}\b/);
   if (spec.metric !== 'backlog' && numericMonth) spec.filters.month = `${numericMonth[1]}-${numericMonth[2].padStart(2, '0')}`;
+  else if (spec.metric !== 'backlog' && month && namedYear) spec.filters.month = `${namedYear[0]}-${month[1]}`;
   else if (spec.metric !== 'backlog' && month) {
     const matches = [...new Set(records.map((row) => row.month).filter((value) => value.endsWith(`-${month[1]}`)))];
     if (matches.length === 1) spec.filters.month = matches[0];

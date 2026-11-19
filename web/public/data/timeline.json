@@ -34,5 +34,11 @@
     "question": "¿Cuántos casos seguían abiertos al cierre de un día?",
     "result": "Las fechas de recepción y cierre permiten seguir el backlog diario sin atribuir estados intermedios inventados.",
     "evidence": "sql/analytics/03_observable_history.sql"
+  },
+  {
+    "title": "Muestra que crece cada día",
+    "question": "¿Cómo mantener viva la demo sin perder reproducibilidad?",
+    "result": "Una tarea diaria agrega casos sintéticos y actualiza los cierres recientes. El mismo corte siempre genera los mismos registros.",
+    "evidence": ".github/workflows/daily_data.yml"
   }
 ]

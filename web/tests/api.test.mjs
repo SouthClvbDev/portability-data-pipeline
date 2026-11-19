@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
+import { readFile } from 'node:fs/promises';
 import handler from '../api/chat.mjs';
+
+const summary = JSON.parse(await readFile(new URL('../public/data/summary.json', import.meta.url)));
 
 const invoke = async (question, mode = 'dataset') => {
   let result;
@@ -10,7 +13,7 @@ const invoke = async (question, mode = 'dataset') => {
 };
 
 test('la función responde un cruce calculado del dataset', async () => {
-  const result = await invoke('¿Qué equipo tuvo más rechazos en mayo?');
+  const result = await invoke('¿Qué equipo tuvo más rechazos en mayo 2023?');
   assert.equal(result.code, 200);
   assert.equal(result.result.cases, 92);
   assert.match(result.answer, /Backoffice Norte: 31/);
@@ -22,7 +25,7 @@ test('la IA solo interpreta filtros; el servidor calcula el resultado', async ()
   process.env.GEMINI_API_KEY = 'test-only';
   globalThis.fetch = async () => ({ ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: JSON.stringify({ metric: 'count', groupBy: 'team', filters: { status: 'Rechazado', month: '2023-05' } }) }] } }] }) });
   try {
-    const result = await invoke('¿Qué equipo tuvo más rechazos en mayo?', 'llm');
+    const result = await invoke('¿Qué equipo tuvo más rechazos en mayo 2023?', 'llm');
     assert.equal(result.source, 'interpreted:gemini');
     assert.equal(result.result.cases, 92);
     assert.match(result.answer, /Backoffice Norte: 31/);
@@ -66,7 +69,7 @@ test('la cuota compartida bloquea llamadas al modelo y conserva la respuesta det
     };
     const allowed = await invoke('¿Cuántos casos hay?', 'llm');
     assert.equal(allowed.source, 'interpreted:gemini');
-    assert.equal(allowed.result.cases, 7500);
+    assert.equal(allowed.result.cases, summary.total);
     assert.equal(requests.length, 2);
   } finally {
     globalThis.fetch = previous.fetch;

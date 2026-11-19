@@ -7,6 +7,9 @@ import { answerQuery } from '../lib/query.mjs';
 test('el historial diario conserva ingresos, cierres y backlog final', async () => {
   const history = JSON.parse(await readFile(new URL('../public/data/history.json', import.meta.url)));
   const summary = JSON.parse(await readFile(new URL('../public/data/summary.json', import.meta.url)));
+  const daily = JSON.parse(await readFile(new URL('../../data/sample/portability_cases_daily.meta.json', import.meta.url)));
+  assert.equal(summary.dailyAsOf, daily.asOf);
+  assert.equal(summary.total, 7500 + daily.records);
   assert.equal(history.series.reduce((sum, entry) => sum + entry.received, 0), summary.total);
   assert.equal(history.series.reduce((sum, entry) => sum + entry.closed, 0), summary.closed);
   assert.equal(history.series.at(-1).open, summary.open);
@@ -21,7 +24,7 @@ test('el asistente calcula la fecha de corte con las mismas fechas', async () =>
   assert.equal(answerQuery('¿Cuántos casos estaban abiertos al 2023-05-31?', records).result.cases, answer.result.cases);
   const byTeam = answerQuery('backlog al 2023-05-31 por equipo', records);
   assert.equal(byTeam.result.groups.reduce((sum, group) => sum + group.cases, 0), answer.result.cases);
-  assert.equal(answerQuery('backlog al 2024-01-01', records).reason, 'out_of_range');
+  assert.equal(answerQuery('backlog al 2030-01-01', records).reason, 'out_of_range');
   assert.equal(answerQuery('backlog histórico', records).reason, 'missing_date');
 });
 

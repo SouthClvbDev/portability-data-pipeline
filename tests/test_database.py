@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import IntegrityError
+from src.load_to_postgres import insert_rows
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
@@ -19,6 +20,12 @@ DATABASE_URL = (
     f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}"
     f"@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 )
+BASE_DIR = Path(__file__).resolve().parents[1]
+
+
+def expected_case_count():
+    files = ["portability_cases.csv", "portability_cases_incremental.csv", "portability_cases_daily.csv"]
+    return sum(len(pd.read_csv(BASE_DIR / "data/sample" / name)) for name in files if (BASE_DIR / "data/sample" / name).exists())
 
 
 @pytest.fixture(scope="module")
@@ -37,13 +44,13 @@ def engine():
     return database_engine
 
 
-def test_database_has_7500_records(engine):
+def test_database_has_all_versioned_records(engine):
     with engine.connect() as connection:
         total = connection.execute(
             text("SELECT COUNT(*) FROM public.portability_cases")
         ).scalar()
 
-    assert total == 7500
+    assert total == expected_case_count()
 
 
 def test_database_enforces_unique_case_ids(engine):
@@ -120,7 +127,22 @@ def test_monthly_view_sums_to_total(engine):
     with engine.connect() as connection:
         monthly_total = connection.execute(query).scalar()
 
-    assert monthly_total == 7500
+    assert monthly_total == expected_case_count()
+
+
+def test_sync_updates_changed_cases_and_ignores_identical_rows(engine):
+    daily = BASE_DIR / "data/processed/portability_cases_daily_clean.csv"
+    if not daily.exists():
+        pytest.skip("Sin lote diario")
+    original = pd.read_csv(daily).head(1)
+    with engine.connect() as connection:
+        assert insert_rows(original, connection, update_existing=True) == 0
+        modified = original.copy()
+        modified.loc[modified.index[0], "team"] = "Backoffice Sur" if original.iloc[0]["team"] != "Backoffice Sur" else "Backoffice Norte"
+        assert insert_rows(modified, connection, update_existing=True) == 1
+        actual = connection.execute(text("SELECT team FROM public.portability_cases WHERE case_id = :case_id"), {"case_id": original.iloc[0]["case_id"]}).scalar_one()
+        assert actual == modified.iloc[0]["team"]
+        connection.rollback()
 
 
 def test_expected_analytics_views_exist(engine):

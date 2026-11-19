@@ -13,7 +13,7 @@ const definitions = [
     title: '¿Dónde están los pendientes?',
     question: 'Casos abiertos por equipo',
     context: 'El estado actual ayuda a localizar carga pendiente entre equipos.',
-    interpretation: 'Es una instantánea. Para backlog histórico se necesitarían eventos de cambio de estado.'
+    interpretation: 'Es una instantánea actual. El backlog diario se calcula aparte con fechas de recepción y cierre.'
   },
   {
     id: 'sla',
@@ -25,7 +25,7 @@ const definitions = [
   {
     id: 'rejections',
     title: '¿Quién gestionó los rechazos?',
-    question: 'Rechazos por equipo en mayo',
+    question: 'Rechazos por equipo en mayo 2023',
     context: 'Un cruce concreto de estado, mes de recepción y equipo.',
     interpretation: 'El conteo no explica la causa del rechazo ni mide desempeño individual.'
   }

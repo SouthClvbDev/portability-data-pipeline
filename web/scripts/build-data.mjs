@@ -7,12 +7,17 @@ import { buildHistory } from '../lib/history.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const web = path.join(root, 'web');
-const files = ['portability_cases.csv', 'portability_cases_incremental.csv'];
+const files = ['portability_cases.csv', 'portability_cases_incremental.csv', 'portability_cases_daily.csv'];
 const rows = [];
+let dailyRows = [];
 for (const file of files) {
   const csv = await readFile(path.join(root, 'data/sample', file), 'utf8');
-  rows.push(...parse(csv.replace(/^\uFEFF/, ''), { columns: true, skip_empty_lines: true }));
+  const parsed = parse(csv.replace(/^\uFEFF/, ''), { columns: true, skip_empty_lines: true });
+  if (file === 'portability_cases_daily.csv') dailyRows = parsed;
+  rows.push(...parsed);
 }
+const daily = JSON.parse(await readFile(path.join(root, 'data/sample/portability_cases_daily.meta.json'), 'utf8'));
+if (daily.records !== dailyRows.length || dailyRows.some(row => row.received_at.replace(' ', 'T') > daily.asOf || (row.closed_at && row.closed_at.replace(' ', 'T') > daily.asOf))) throw new Error('El lote diario no coincide con su fecha de corte');
 
 const countBy = (field) => Object.fromEntries(
   [...new Set(rows.map((row) => row[field]))].sort().map((value) => [value, rows.filter((row) => row[field] === value).length])
@@ -27,6 +32,7 @@ for (const row of rows) {
 const summary = {
   source: 'Datos sintéticos versionados en data/sample',
   generatedAt: new Date().toISOString(),
+  dailyAsOf: daily.asOf,
   total: rows.length,
   open: rows.length - resolved.length,
   closed: resolved.length,

@@ -113,6 +113,23 @@ No hay registros nuevos para cargar.
 Registros totales en PostgreSQL: 7500
 ```
 
+### 6.4 Incorporar la muestra diaria
+
+La muestra diaria versionada extiende los dos lotes base hasta la fecha de corte indicada en `data/sample/portability_cases_daily.meta.json`. Para llevar la copia local al corte actual:
+
+```powershell
+python src\generate_daily_data.py
+python src\validation\validate_data.py --input data\sample\portability_cases_daily.csv
+python src\transformations\transform_cases.py `
+    --input data\sample\portability_cases_daily.csv `
+    --output data\processed\portability_cases_daily_clean.csv
+python src\load_to_postgres.py `
+    --mode sync `
+    --input data\processed\portability_cases_daily_clean.csv
+```
+
+Repetir `--mode sync` con el mismo archivo no duplica casos ni vuelve a actualizar filas idénticas. La tarea diaria de GitHub versiona el CSV y actualiza el portfolio web; no conecta con esta base local.
+
 ## 7. Crear o actualizar vistas
 
 Usar siempre `-Raw -Encoding UTF8` para preservar caracteres acentuados.
@@ -131,6 +148,17 @@ Get-Content `
 ```powershell
 Get-Content `
     -Path sql\analytics\02_monthly_metrics.sql `
+    -Raw `
+    -Encoding UTF8 |
+    docker exec -i portability-postgres psql `
+    -v ON_ERROR_STOP=1 `
+    -U data_user `
+    -d portability_db
+```
+
+```powershell
+Get-Content `
+    -Path sql\analytics\03_observable_history.sql `
     -Raw `
     -Encoding UTF8 |
     docker exec -i portability-postgres psql `
@@ -179,19 +207,14 @@ PostgreSQL debe estar iniciado porque las pruebas de integración consultan la b
 pytest -q
 ```
 
-Resultado esperado:
-
-```text
-26 passed
-```
+Resultado esperado: todas las pruebas pasan; su número puede crecer con el proyecto.
 
 ## 10. Actualizar Power BI
 
 1. Confirmar que PostgreSQL está activo.
 2. Abrir `dashboard/portability_operations.pbix`.
 3. Seleccionar **Actualizar**.
-4. Verificar total `7500`, abiertos `3676` y cerrados `3824`.
-5. Verificar el período enero-junio de 2023.
+4. Cuando el informe esté listo para actualizarse, comparar sus métricas con las vistas SQL y confirmar el período. Tras incorporar el lote diario, las cifras superan la muestra base de 7.500.
 
 ## 11. Verificar Git
 

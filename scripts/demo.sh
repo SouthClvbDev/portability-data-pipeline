@@ -14,6 +14,11 @@ docker compose up -d --wait
 "$PYTHON" src/load_to_postgres.py --mode initial
 "$PYTHON" src/transformations/transform_cases.py --input data/sample/portability_cases_incremental.csv --output data/processed/portability_cases_incremental_clean.csv
 "$PYTHON" src/load_to_postgres.py --mode append --input data/processed/portability_cases_incremental_clean.csv
+if [[ -f data/sample/portability_cases_daily.csv ]]; then
+  "$PYTHON" src/validation/validate_data.py --input data/sample/portability_cases_daily.csv
+  "$PYTHON" src/transformations/transform_cases.py --input data/sample/portability_cases_daily.csv --output data/processed/portability_cases_daily_clean.csv
+  "$PYTHON" src/load_to_postgres.py --mode sync --input data/processed/portability_cases_daily_clean.csv
+fi
 docker exec -i portability-postgres psql -v ON_ERROR_STOP=1 -U "${POSTGRES_USER:-data_user}" -d "${POSTGRES_DB:-portability_db}" < sql/analytics/01_operational_views.sql
 docker exec -i portability-postgres psql -v ON_ERROR_STOP=1 -U "${POSTGRES_USER:-data_user}" -d "${POSTGRES_DB:-portability_db}" < sql/analytics/02_monthly_metrics.sql
 docker exec -i portability-postgres psql -v ON_ERROR_STOP=1 -U "${POSTGRES_USER:-data_user}" -d "${POSTGRES_DB:-portability_db}" < sql/analytics/03_observable_history.sql

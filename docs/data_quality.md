@@ -104,20 +104,28 @@ La carga incremental:
 - compatibilidad de columnas;
 - ausencia de solapamiento entre lotes.
 
-### PostgreSQL: 10 pruebas
+### Extensión diaria: 4 pruebas
+
+- reproducción del mismo corte;
+- ausencia de fechas futuras;
+- actualización del estado sin cambiar la identidad;
+- consistencia entre CSV, metadatos e IDs base.
+
+### PostgreSQL: 11 pruebas
 
 - conexión disponible;
-- 7.500 registros;
+- total igual a los tres CSV versionados;
 - IDs únicos;
 - vista KPI igual a tabla base;
 - abiertos + cerrados = total;
 - métricas mensuales y vistas esperadas.
 - ingresos, cierres y backlog diario reconciliados con la tabla base.
+- carga `sync` que actualiza cambios y omite filas idénticas.
 
 Resultado actual:
 
 ```text
-26 passed
+31 passed
 ```
 
 ## Verificaciones manuales de referencia
@@ -126,7 +134,7 @@ Resultado actual:
 SELECT COUNT(*) FROM portability_cases;
 ```
 
-Resultado esperado: `7500`.
+Resultado esperado: `7500` tras los dos lotes base; con la extensión diaria se suman las filas de `portability_cases_daily.csv`.
 
 ```sql
 SELECT case_id, COUNT(*)
@@ -141,7 +149,7 @@ Resultado esperado: cero filas.
 SELECT * FROM vw_portability_kpis;
 ```
 
-Resultados clave esperados:
+Resultados de referencia de los dos lotes base, antes de la extensión diaria:
 
 - total: 7.500;
 - abiertos: 3.676;

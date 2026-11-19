@@ -10,18 +10,18 @@ async function loadData() {
     $('#open').textContent = number(data.open);
     $('#closed').textContent = number(data.closed);
     $('#sla').textContent = `${data.slaRate.toLocaleString('es-AR')} %`;
-    $('#period').textContent = `Fuente: CSV sintéticos del repositorio · Recepciones del ${data.period.start} al ${data.period.end} · SLA sintético de 48 horas corridas.`;
-    const months = Object.entries(data.byMonth);
+    $('#period').textContent = `Fuente: CSV sintéticos del repositorio · Recepciones del ${data.period.start} al ${data.period.end} · Lote diario actualizado hasta ${data.dailyAsOf.replace('T', ' ')} (Argentina) · SLA sintético de 48 horas corridas.`;
+    const months = Object.entries(data.byMonth).sort(([a], [b]) => a.localeCompare(b)).slice(-12);
     const maxMonth = Math.max(...months.map(([, value]) => value));
     for (const [month, value] of months) {
       const item = document.createElement('div'); item.className = 'bar-item';
       item.style.setProperty('--bar-height', `${Math.max(value / maxMonth * 145, 2)}px`);
       const count = document.createElement('strong'); count.textContent = number(value);
       const bar = document.createElement('i');
-      const name = document.createElement('span'); name.textContent = month.slice(5);
+      const name = document.createElement('span'); name.textContent = month.slice(2);
       item.append(count, bar, name); $('#monthly').append(item);
     }
-    $('#monthly').setAttribute('aria-label', `Casos recibidos por mes: ${months.map(([month, value]) => `${month}: ${value}`).join(', ')}`);
+    $('#monthly').setAttribute('aria-label', `Casos recibidos en los últimos 12 meses: ${months.map(([month, value]) => `${month}: ${value}`).join(', ')}`);
     const statuses = Object.entries(data.byStatus).sort((a, b) => b[1] - a[1]);
     for (const [status, value] of statuses) {
       const row = document.createElement('div'); row.className = 'status-row';

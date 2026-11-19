@@ -4,7 +4,7 @@ El proyecto reconstruye con datos sintéticos una operación de Backoffice. Cada
 
 ```mermaid
 flowchart LR
-    A[CSV sintético inicial e incremental] --> B[Validación Python]
+    A[CSV sintéticos base y diario] --> B[Validación Python]
     B --> C[Transformación pandas]
     C --> D[PostgreSQL: tabla con PK y restricciones]
     D --> E[Vistas SQL operativas e historia observable]
@@ -12,7 +12,7 @@ flowchart LR
     E --> G[Validación y consultas]
 ```
 
-`sql/schema.sql` define los tipos, la clave primaria y los índices. `src/load_to_postgres.py` ejecuta la carga inicial dentro de una transacción y la incremental con `ON CONFLICT DO NOTHING`. La clave primaria garantiza la unicidad incluso cuando hay intentos de carga concurrentes. Los dos lotes de muestra permiten reproducir 7.500 casos.
+`sql/schema.sql` define los tipos, la clave primaria y los índices. `src/load_to_postgres.py` ejecuta la carga inicial dentro de una transacción, el lote base incremental con `ON CONFLICT DO NOTHING` y la extensión diaria con actualización solo de filas modificadas. La clave primaria garantiza la unicidad. Los dos lotes base reproducen 7.500 casos; la [extensión diaria](daily_synthetic_updates.md) aumenta esa cantidad.
 
 Power BI usa la tabla detallada y una dimensión calendario para que los filtros actúen sobre las medidas. Las vistas SQL sirven para consultas y validación, pero no se relacionan entre sí en el modelo de Power BI.
 
@@ -22,4 +22,4 @@ Power BI usa la tabla detallada y una dimensión calendario para que los filtros
 - El SLA sintético usa 48 horas corridas. `No aplica` indica que el caso aún no se resolvió.
 - La vista diaria agrupa por fecha de recepción y muestra el estado actual de esos casos; no representa cierres ocurridos ese día.
 - Las fechas de recepción y cierre permiten reconstruir el backlog al final de cada día, suponiendo que no hay reaperturas. No permiten conocer los estados intermedios. Ver [historia observable](observable_history.md).
-- El volumen de 7.500 casos permite inserciones por lotes; un sistema mayor necesitaría una tabla de staging y cargas masivas.
+- La muestra actual se carga en lotes de 500 filas; si crece mucho más, convendrá usar staging y carga masiva.

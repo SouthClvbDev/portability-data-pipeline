@@ -7,10 +7,10 @@ Esta web muestra cómo se construye y evoluciona el pipeline de portabilidad. La
 1. Una introducción al problema operativo y al objetivo del proyecto.
 2. Cinco etapas del flujo: generación, validación, transformación, carga y exploración.
 3. Indicadores de la muestra versionada: total, abiertos, cerrados, SLA, volumen mensual y estados. Un gráfico permite seleccionar una fecha y ver el backlog al cierre del día.
-4. Cuatro escenarios guiados: volumen por mes, pendientes por equipo, SLA por canal y rechazos por equipo en mayo. Permiten llevar la misma pregunta al asistente.
+4. Cuatro escenarios guiados: volumen por mes, pendientes por equipo, SLA por canal y rechazos por equipo en mayo de 2023. Permiten llevar la misma pregunta al asistente.
 5. Una galería de las tres páginas del Power BI, con capturas reales cuando estén disponibles y un estado pendiente explícito cuando falten.
 6. Un asistente para preguntas sobre las métricas disponibles, incluido backlog a una fecha.
-7. Un recorrido progresivo por seis etapas del proyecto, cada una con enlace a su evidencia en el repositorio.
+7. Un recorrido progresivo por siete etapas del proyecto, cada una con enlace a su evidencia en el repositorio.
 
 El sitio está hecho con HTML, CSS y JavaScript sin un framework de interfaz. La aplicación de datos principal sigue en Python y PostgreSQL; Vercel aloja una presentación derivada de los CSV, no ejecuta el pipeline completo.
 
@@ -28,9 +28,9 @@ flowchart LR
     G --> F
 ```
 
-[`scripts/build-data.mjs`](scripts/build-data.mjs) lee los dos CSV de `../data/sample` y calcula totales por estado, canal, equipo y mes. También calcula abiertos, cerrados y el SLA sintético de 48 horas entre los casos cerrados. Escribe `public/data/summary.json`, `public/data/scenarios.json` y `public/data/history.json` para la página; `data/records.json` conserva los campos necesarios para consultas del chat. Los cuatro se generan durante el build y se excluyen de Git; el último se empaqueta en la función, no se publica como archivo estático.
+[`scripts/build-data.mjs`](scripts/build-data.mjs) lee los tres CSV versionados de `../data/sample` y verifica que el lote diario coincida con su [fecha de corte](../data/sample/portability_cases_daily.meta.json). Calcula totales por estado, canal, equipo y mes; también abiertos, cerrados y el SLA sintético de 48 horas entre los casos cerrados. Escribe `public/data/summary.json`, `public/data/scenarios.json` y `public/data/history.json` para la página; `data/records.json` conserva los campos necesarios para consultas del chat. Los cuatro se generan durante el build y se excluyen de Git; el último se empaqueta en la función, no se publica como archivo estático.
 
-[`public/app.js`](public/app.js) carga esos JSON y dibuja las tarjetas, gráficos, escenarios y serie diaria. Los escenarios se definen en [`lib/scenarios.mjs`](lib/scenarios.mjs) y se calculan con el mismo motor de consultas del chat; sus cifras no están escritas a mano en la interfaz. El recorrido de «Proyecto vivo» se edita en [`public/data/timeline.json`](public/data/timeline.json): cada etapa describe un resultado y enlaza código comprobable. La web muestra una **instantánea de cada despliegue**: si cambian los CSV, hay que construir y desplegar nuevamente. El [plan de siguientes escenarios](../docs/next_scenarios.md) fija los criterios de evolución. No hay sincronización en tiempo real con PostgreSQL ni con el PBIX.
+[`public/app.js`](public/app.js) carga esos JSON y dibuja las tarjetas, gráficos, escenarios y serie diaria. El gráfico mensual muestra los últimos 12 meses; el escenario guiado conserva la serie completa. Los escenarios se definen en [`lib/scenarios.mjs`](lib/scenarios.mjs) y se calculan con el mismo motor de consultas del chat; sus cifras no están escritas a mano en la interfaz. El recorrido de «Proyecto vivo» se edita en [`public/data/timeline.json`](public/data/timeline.json): cada etapa describe un resultado y enlaza código comprobable. La web muestra una **instantánea de cada despliegue**: si cambian los CSV, hay que construir y desplegar nuevamente. La fecha de actualización se toma del manifiesto del lote diario, no de la hora de build. El [plan de siguientes escenarios](../docs/next_scenarios.md) fija los criterios de evolución. No hay sincronización en tiempo real con PostgreSQL ni con el PBIX.
 
 ### Backlog a fecha de corte
 
@@ -50,7 +50,7 @@ El navegador envía `POST /api/chat` con una pregunta de hasta 300 caracteres y 
 
 La función [`api/chat.mjs`](api/chat.mjs) lee los registros proyectados. [`lib/query.mjs`](lib/query.mjs) traduce preguntas frecuentes a una métrica, una agrupación y filtros por estado, mes, canal o equipo. El servidor filtra y calcula el resultado; en modo `dataset` no llama a ningún modelo y no tiene costo de tokens. Para SLA usa solo casos resueltos como denominador. También calcula promedios de horas de resolución.
 
-Puede combinar filtros, por ejemplo rechazos por equipo en mayo, sin ejecutar SQL enviado por visitantes. Para backlog acepta una fecha ISO completa dentro del período observado, por ejemplo «backlog al 2023-05-31», y filtros por equipo o canal. No interpreta todavía todas las formulaciones posibles. Las preguntas sobre causas, medianas, estados intermedios o reaperturas se rechazan porque faltan datos o una definición analítica adecuada.
+Puede combinar filtros, por ejemplo rechazos por equipo en mayo de 2023, sin ejecutar SQL enviado por visitantes. Como ahora hay varios años, un mes nombrado sin año puede ser ambiguo; el asistente pide precisarlo. Para backlog acepta una fecha ISO completa dentro del período observado, por ejemplo «backlog al 2023-05-31», y filtros por equipo o canal. No interpreta todavía todas las formulaciones posibles. Las preguntas sobre causas, medianas, estados intermedios o reaperturas se rechazan porque faltan datos o una definición analítica adecuada.
 
 ### Modo LLM opcional
 
@@ -71,7 +71,7 @@ La cuota de aplicación limita llamadas, pero no sustituye un presupuesto o lím
 | «¿Cuál es el SLA?» | Dentro/fuera de 48 horas y porcentaje entre casos cerrados. |
 | «¿Qué canal tiene más casos?» | Canal principal y desglose por canal. |
 | «¿Cómo evolucionó el volumen mensual?» | Casos recibidos por mes, no cierres mensuales. |
-| «¿Qué equipo tuvo más rechazos en mayo?» | Filtra mayo y rechazos, agrupa por equipo y muestra los conteos. |
+| «¿Qué equipo tuvo más rechazos en mayo de 2023?» | Filtra mayo de 2023 y rechazos, agrupa por equipo y muestra los conteos. |
 | «¿Cuál es el SLA por canal?» | Calcula dentro de SLA / resueltos para cada canal. |
 | «¿Cuál es la resolución promedio de Backoffice Norte?» | Promedia horas entre casos resueltos del equipo. |
 
@@ -100,6 +100,7 @@ También hay una entrada [`../api/chat.mjs`](../api/chat.mjs) y [`../vercel.json
 2. Dejar **Root Directory** en la raíz del repositorio y seleccionar **Framework Preset: Other**. `vercel.json` ejecuta `npm run build` y publica `web/public`. La función `/api/chat` está en `api/chat.mjs`.
 3. Si el proyecto conserva el preset Python de una importación anterior, cambiarlo en **Project Settings → Build and Deployment** y volver a desplegar.
 4. Cada push a `main` puede crear un nuevo despliegue si la integración Git está habilitada. Confirmar en Vercel que el build termina y probar la página y el chat.
+   La [tarea diaria](../docs/daily_synthetic_updates.md) genera y commitea nuevas filas; si el push del bot no dispara Vercel, configurar el secreto `VERCEL_DEPLOY_HOOK_URL` en GitHub para solicitar el despliegue.
 5. Para activar la interpretación con IA, agregar **una** de `GEMINI_API_KEY` u `OPENAI_API_KEY` como variable de entorno del servidor en Vercel y volver a desplegar. `GEMINI_MODEL` y `OPENAI_MODEL` son opcionales. La clave no debe llevar el prefijo `NEXT_PUBLIC_` ni guardarse en el repositorio.
 6. Para un límite compartido entre instancias, crear una base Redis REST compatible con Upstash y agregar `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN` en Vercel. Probar que, al agotarse la cuota, el chat continúa respondiendo en modo `dataset`. Configurar además un límite de gasto en el proveedor del modelo.
 

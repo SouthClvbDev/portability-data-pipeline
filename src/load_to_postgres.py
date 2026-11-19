@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 
 import pandas as pd
-from sqlalchemy import create_engine, text, MetaData, Table
+from sqlalchemy import create_engine, text, MetaData, Table, or_
 from sqlalchemy.dialects.postgresql import insert
 
 
@@ -65,7 +65,9 @@ def ensure_schema(engine):
         connection.exec_driver_sql((BASE_DIR / "sql" / "schema.sql").read_text(encoding="utf-8"))
 
 
-def insert_rows(df, connection, *, ignore_existing=False):
+def insert_rows(df, connection, *, ignore_existing=False, update_existing=False):
+    if ignore_existing and update_existing:
+        raise ValueError("No se pueden ignorar y actualizar duplicados a la vez")
     table = Table("portability_cases", MetaData(), schema="public", autoload_with=connection)
     rows = df.astype(object).where(pd.notna(df), None).to_dict(orient="records")
     inserted = 0
@@ -73,6 +75,13 @@ def insert_rows(df, connection, *, ignore_existing=False):
         statement = insert(table).values(rows[offset:offset + 500])
         if ignore_existing:
             statement = statement.on_conflict_do_nothing(index_elements=["case_id"])
+        elif update_existing:
+            columns = [column.name for column in table.columns if column.name != "case_id"]
+            statement = statement.on_conflict_do_update(
+                index_elements=["case_id"],
+                set_={name: statement.excluded[name] for name in columns},
+                where=or_(*(table.c[name].is_distinct_from(statement.excluded[name]) for name in columns)),
+            )
         inserted += connection.execute(statement).rowcount
     return inserted
 
@@ -98,6 +107,14 @@ def load_incremental(df: pd.DataFrame, engine) -> None:
     )
 
 
+def load_sync(df: pd.DataFrame, engine) -> None:
+    with engine.begin() as connection:
+        before = connection.execute(text("SELECT COUNT(*) FROM public.portability_cases")).scalar_one()
+        affected = insert_rows(df, connection, update_existing=True)
+        after = connection.execute(text("SELECT COUNT(*) FROM public.portability_cases")).scalar_one()
+    print(f"Sincronización completada: {after - before} nuevos, {affected - (after - before)} actualizados, {len(df) - affected} sin cambios.")
+
+
 def show_total_records(engine) -> None:
     with engine.connect() as connection:
         total_records = connection.execute(
@@ -114,11 +131,12 @@ def main():
 
     parser.add_argument(
         "--mode",
-        choices=["initial", "append"],
+        choices=["initial", "append", "sync"],
         default="initial",
         help=(
             "initial reemplaza los datos. "
-            "append agrega solo registros nuevos."
+            "append agrega solo registros nuevos. "
+            "sync inserta y actualiza solo los registros modificados."
         ),
     )
 
@@ -137,8 +155,10 @@ def main():
 
     if args.mode == "initial":
         load_initial(df, engine)
-    else:
+    elif args.mode == "append":
         load_incremental(df, engine)
+    else:
+        load_sync(df, engine)
 
     show_total_records(engine)
 

@@ -218,3 +218,11 @@ Resultados generales actuales:
 - «Proyecto vivo» muestra seis etapas progresivas, cada una enlazada con su evidencia en el repositorio. Puede grabarse como base de una primera demo visual.
 - El PBIX y sus capturas siguen bajo edición del autor.
 
+## Avance posterior: muestra sintética diaria
+
+- Un generador estable por fecha extiende la muestra desde julio de 2023 hasta la hora de corte actual en Argentina.
+- Un tercer CSV versionado y sus metadatos permiten comprobar la frescura de la web sin presentar datos reales.
+- La carga `sync` agrega nuevos casos y actualiza cierres recientes sin modificar filas idénticas.
+- GitHub Actions ejecuta la generación diariamente, valida el proyecto y commitea el lote si cambió.
+- El PBIX permanece bajo edición manual; la automatización no modifica el informe.
+

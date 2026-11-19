@@ -4,7 +4,7 @@
 
 Proyecto de portfolio orientado a un perfil **Data Developer**, basado en un escenario operativo de trámites de portabilidad gestionados por un área de Backoffice.
 
-El proyecto implementa un pipeline reproducible que genera datos sintéticos, valida reglas de calidad, transforma la información, carga PostgreSQL, crea una capa analítica SQL y alimenta un dashboard interactivo en Power BI.
+El proyecto implementa un pipeline reproducible que genera datos sintéticos, valida reglas de calidad, transforma la información, carga PostgreSQL, crea una capa analítica SQL y alimenta un dashboard interactivo en Power BI. Una muestra diaria versionada permite que el portfolio web crezca con cada actualización.
 
 > El repositorio no utiliza información real de clientes, líneas telefónicas ni sistemas de Telecom. Todos los datos son ficticios.
 
@@ -33,18 +33,18 @@ El proyecto implementa un pipeline reproducible que genera datos sintéticos, va
 ## Arquitectura del flujo
 
 ```text
-Generador inicial (5.000 casos) ─┐
-                                ├─> Validación y transformación
-Generador incremental (2.500) ──┘              │
-                                               v
-                                    PostgreSQL: 7.500 casos
-                                               │
-                         ┌─────────────────────┴─────────────────────┐
-                         v                                           v
-                Vistas analíticas SQL                       Pruebas de base
+Lote inicial + incremental + muestra diaria versionada
                          │
                          v
-                     Power BI
+              Validación y transformación
+                         │
+                         v
+             PostgreSQL + vistas SQL + pruebas
+
+CSV versionados ──> Build de Vercel ──> Portfolio web + asistente
+       ^
+       │
+GitHub Actions: generación diaria, validación y commit
 ```
 
 ## Estructura principal
@@ -57,15 +57,19 @@ portability-data-pipeline/
 │   ├── processed/
 │   └── sample/
 │       ├── portability_cases.csv
-│       └── portability_cases_incremental.csv
+│       ├── portability_cases_incremental.csv
+│       ├── portability_cases_daily.csv
+│       └── portability_cases_daily.meta.json
 ├── docs/
 ├── sql/
 │   └── analytics/
 │       ├── 01_operational_views.sql
-│       └── 02_monthly_metrics.sql
+│       ├── 02_monthly_metrics.sql
+│       └── 03_observable_history.sql
 ├── src/
 │   ├── generate_data.py
 │   ├── generate_incremental_data.py
+│   ├── generate_daily_data.py
 │   ├── load_to_postgres.py
 │   ├── transformations/
 │   │   └── transform_cases.py
@@ -73,6 +77,7 @@ portability-data-pipeline/
 │       └── validate_data.py
 ├── tests/
 │   ├── test_pipeline.py
+│   ├── test_daily_data.py
 │   └── test_database.py
 ├── docker-compose.yml
 ├── requirements.txt
@@ -88,22 +93,23 @@ portability-data-pipeline/
 5. `src/generate_incremental_data.py` genera 2.500 trámites adicionales.
 6. El transformador procesa el segundo lote mediante rutas configurables.
 7. `src/load_to_postgres.py --mode append` incorpora solamente IDs nuevos.
-8. Los scripts SQL crean vistas operativas y mensuales.
-9. Power BI consume la tabla base y presenta tres páginas analíticas.
-10. pytest valida archivos, reglas, PostgreSQL y vistas.
+8. `src/generate_daily_data.py` crea la extensión hasta la hora actual en Argentina; `--mode sync` agrega casos nuevos y actualiza cierres recientes.
+9. Los scripts SQL crean vistas operativas, mensuales y de historia observable.
+10. El build de Vercel calcula la web y el asistente desde los CSV versionados. Power BI consume la tabla local cuando el autor actualiza el informe.
+11. pytest valida archivos, reglas, PostgreSQL y vistas.
 
-## Resultados actuales
+## Muestra base y extensión diaria
 
 | Indicador | Resultado |
 |---|---:|
 | Lote inicial | 5.000 |
 | Lote incremental | 2.500 |
-| Total en PostgreSQL | 7.500 |
+| Total tras la demo | 7.500 + casos del lote diario versionado |
 | IDs duplicados | 0 |
-| Período | 2023-01-01 a 2023-06-30 |
+| Período | 2023-01-01 hasta el corte declarado en `daily.meta.json` |
 | Columnas analíticas | 21 |
-| Vistas analíticas | 6 |
-| Pruebas automatizadas | 24 exitosas |
+| Vistas analíticas | Operativas, mensuales y de historia observable |
+| Pruebas automatizadas | Pipeline y web; se ejecutan en CI |
 
 ## Inicio rápido
 
@@ -115,7 +121,7 @@ python3 -m venv .venv
 bash scripts/demo.sh
 ```
 
-La demo valida ambos CSV, transforma y carga 7.500 casos, crea las vistas analíticas y ejecuta las pruebas. `bash scripts/demo.sh` puede repetirse; la carga inicial reconstruye los datos de muestra. Requiere Docker Compose y el puerto 5432 disponible. Para configurar las credenciales locales, copiá `.env.example` a `.env`; `.env` está excluido de Git.
+La demo valida los tres CSV versionados, transforma y carga los casos, crea las vistas analíticas y ejecuta las pruebas. `bash scripts/demo.sh` puede repetirse; la carga inicial reconstruye los datos de muestra. Requiere Docker Compose y el puerto 5432 disponible. Para configurar las credenciales locales, copiá `.env.example` a `.env`; `.env` está excluido de Git. La [actualización diaria](docs/daily_synthetic_updates.md) explica la automatización y su fecha de corte.
 
 En Windows PowerShell, seguí [el runbook](docs/runbook.md). Para ejecutar solo las pruebas, con PostgreSQL y los datos ya cargados:
 
@@ -172,10 +178,11 @@ Las pruebas verifican:
 - [`docs/demo_video_plan.md`](docs/demo_video_plan.md)
 - [`docs/next_scenarios.md`](docs/next_scenarios.md)
 - [`docs/observable_history.md`](docs/observable_history.md)
+- [`docs/daily_synthetic_updates.md`](docs/daily_synthetic_updates.md)
 - [`docs/release_v1.0.md`](docs/release_v1.0.md)
 - [`web/README.md`](web/README.md)
 
 ## Estado
 
-El pipeline, la carga incremental, la capa SQL, el dashboard, la web y las pruebas automatizadas están implementados. CI está configurado en GitHub Actions. La historia observable de ingresos y cierres ya permite calcular backlog diario; los cambios entre estados intermedios aún necesitan un registro propio. Las otras mejoras previstas son métricas de motivos y capturas verificables del dashboard.
+El pipeline, la carga incremental y la extensión diaria, la capa SQL, el dashboard, la web y las pruebas automatizadas están implementados. CI y la generación diaria están configurados en GitHub Actions. La historia observable de ingresos y cierres permite calcular backlog diario; los cambios entre estados intermedios aún necesitan un registro propio. El PBIX sigue bajo edición del autor y no se modifica ni se refresca con la tarea diaria.
 

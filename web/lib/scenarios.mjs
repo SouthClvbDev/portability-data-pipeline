@@ -3,30 +3,30 @@ import { answerQuery } from './query.mjs';
 const definitions = [
   {
     id: 'volume',
-    title: '¿Cómo crece el volumen?',
+    title: '¿Dónde cambió la demanda?',
     question: 'Casos por mes',
-    context: 'Una mirada al ingreso de trámites a lo largo de la muestra.',
-    interpretation: 'Las barras muestran recepciones por mes. No representan cierres ocurridos ese mes.'
+    context: 'Compará los meses de ingreso para decidir qué período merece un análisis más profundo.',
+    interpretation: 'Las barras muestran recepciones por mes. No representan cierres ocurridos ese mes; el mes del corte está incompleto.'
   },
   {
     id: 'open',
-    title: '¿Dónde están los pendientes?',
+    title: '¿Qué cola revisar hoy?',
     question: 'Casos abiertos por equipo',
-    context: 'El estado actual ayuda a localizar carga pendiente entre equipos.',
+    context: 'La distribución de pendientes entre equipos orienta dónde comenzar el seguimiento diario.',
     interpretation: 'Es una instantánea actual. El backlog diario se calcula aparte con fechas de recepción y cierre.'
   },
   {
     id: 'sla',
-    title: '¿Cómo se distribuye el SLA?',
+    title: '¿Qué canal requiere revisión?',
     question: 'Cumplimiento SLA por canal',
-    context: 'Comparación de cumplimiento entre canales para casos ya resueltos.',
+    context: 'Compará el porcentaje de cumplimiento por canal antes de revisar casos concretos.',
     interpretation: 'El porcentaje usa casos resueltos como denominador y 48 horas corridas como regla sintética.'
   },
   {
     id: 'rejections',
-    title: '¿Quién gestionó los rechazos?',
+    title: '¿Dónde revisar rechazos?',
     question: 'Rechazos por equipo en mayo 2023',
-    context: 'Un cruce concreto de estado, mes de recepción y equipo.',
+    context: 'Un cruce de estado, mes y equipo muestra dónde profundizar, sin atribuir causas.',
     interpretation: 'El conteo no explica la causa del rechazo ni mide desempeño individual.'
   }
 ];

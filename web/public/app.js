@@ -10,7 +10,7 @@ async function loadData() {
     $('#open').textContent = number(data.open);
     $('#closed').textContent = number(data.closed);
     $('#sla').textContent = `${data.slaRate.toLocaleString('es-AR')} %`;
-    $('#period').textContent = `Fuente: CSV sintéticos del repositorio · Recepciones del ${data.period.start} al ${data.period.end} · Lote diario actualizado hasta ${data.dailyAsOf.replace('T', ' ')} (Argentina) · SLA sintético de 48 horas corridas.`;
+    $('#period').textContent = `Fuente: muestra liviana sintética · Recepciones del ${data.period.start} al ${data.period.end} · Mes del corte parcial · Lote diario actualizado hasta ${data.dailyAsOf.replace('T', ' ')} (Argentina) · SLA sintético de 48 horas corridas.`;
     const months = Object.entries(data.byMonth).sort(([a], [b]) => a.localeCompare(b)).slice(-12);
     const maxMonth = Math.max(...months.map(([, value]) => value));
     for (const [month, value] of months) {
@@ -18,10 +18,10 @@ async function loadData() {
       item.style.setProperty('--bar-height', `${Math.max(value / maxMonth * 145, 2)}px`);
       const count = document.createElement('strong'); count.textContent = number(value);
       const bar = document.createElement('i');
-      const name = document.createElement('span'); name.textContent = month.slice(2);
+      const name = document.createElement('span'); name.textContent = month.slice(2) + (month === data.period.end.slice(0, 7) ? '*' : '');
       item.append(count, bar, name); $('#monthly').append(item);
     }
-    $('#monthly').setAttribute('aria-label', `Casos recibidos en los últimos 12 meses: ${months.map(([month, value]) => `${month}: ${value}`).join(', ')}`);
+    $('#monthly').setAttribute('aria-label', `Casos recibidos en los últimos 12 meses; el último mes es parcial: ${months.map(([month, value]) => `${month}: ${value}`).join(', ')}`);
     const statuses = Object.entries(data.byStatus).sort((a, b) => b[1] - a[1]);
     for (const [status, value] of statuses) {
       const row = document.createElement('div'); row.className = 'status-row';
@@ -80,7 +80,7 @@ function showScenario(scenario, button) {
     const amount = scenario.spec.metric === 'sla' ? (group.rate === null ? 'Sin resueltos' : `${group.rate.toLocaleString('es-AR')} % (${number(group.within)}/${number(group.resolved)})`) : number(group.cases);
     row.append(name, track, element('strong', 'scenario-bar-value', amount)); bars.append(row);
   }
-  visual.append(bars, element('small', 'scenario-source', 'Fuente: CSV sintéticos · Cálculo generado al desplegar'));
+  visual.append(bars, element('small', 'scenario-source', 'Fuente: muestra liviana sintética · Cálculo generado al desplegar'));
   card.append(copy, visual);
 }
 
@@ -212,9 +212,24 @@ async function ask(question) {
 
 $('#chat-form').addEventListener('submit', (event) => { event.preventDefault(); const input = $('#question'); const question = input.value.trim(); if (question) { input.value = ''; ask(question); } });
 document.querySelectorAll('[data-question]').forEach((button) => button.addEventListener('click', () => { $('#question').value = button.dataset.question; $('#question').focus(); }));
+document.querySelectorAll('.mobile-menu a').forEach(link => link.addEventListener('click', () => { link.closest('details').open = false; }));
 loadData();
 fetch('/data/full-scale-analysis.json').then(response => response.json()).then(data => {
   $('#python-cutoff').textContent = `${number(data.total)} trámites del 2023-01-01 al ${data.asOf.replace('T', ' ')} (Argentina)`;
+  const peak = data.insights.highestVolume;
+  const slowest = data.insights.lowestSla;
+  $('#decision-volume').textContent = number(peak.cases);
+  $('#decision-volume-month').textContent = peak.month;
+  $('#decision-volume-sla').textContent = `${peak.slaRate.toLocaleString('es-AR')} %`;
+  $('#decision-low-sla').textContent = `${slowest.slaRate.toLocaleString('es-AR')} %`;
+  $('#decision-low-month').textContent = slowest.month;
+  $('#decision-low-volume').textContent = number(slowest.cases);
+  $('#decision-cutoff').textContent = `Datos sintéticos de escala completa · ${number(data.total)} trámites · Corte ${data.asOf.replace('T', ' ')} (Argentina)`;
+  if (peak.month === slowest.month) {
+    $('#decision-symbol').textContent = '=';
+    $('#decision-reading-title').textContent = 'El pico de demanda coincide con el peor SLA.';
+    $('#decision-reading-text').textContent = 'La coincidencia no demuestra una causa. En una operación real, revisaría capacidad, tiempos por equipo y canal, y la evolución de pendientes antes de asignar recursos.';
+  }
   const cards = [
     ['Mayor demora', data.insights.lowestSla, `${data.insights.lowestSla.slaRate.toLocaleString('es-AR')} % dentro de SLA`, data.insights.lowestSla.episode],
     ['Mejor cumplimiento', data.insights.highestSla, `${data.insights.highestSla.slaRate.toLocaleString('es-AR')} % dentro de SLA`, data.insights.highestSla.episode],
@@ -225,7 +240,7 @@ fetch('/data/full-scale-analysis.json').then(response => response.json()).then(d
     card.append(element('span', '', title), element('strong', '', value), element('small', '', `${month.month} · ${detail}`));
     $('#python-insights').append(card);
   }
-}).catch(() => { $('#python-cutoff').textContent = 'Fecha de corte no disponible'; });
+}).catch(() => { $('#python-cutoff').textContent = 'Fecha de corte no disponible'; $('#decision-cutoff').textContent = 'No se pudo cargar el caso de decisión'; });
 loadScenarios();
 loadReport();
 loadHistory();

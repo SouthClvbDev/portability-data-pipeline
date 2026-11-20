@@ -4,13 +4,16 @@ Esta web muestra cómo se construye y evoluciona el pipeline de portabilidad. La
 
 ## Qué puede ver una persona que visita el sitio
 
-1. Una introducción al problema operativo y al objetivo del proyecto.
-2. Cinco etapas del flujo: generación, validación, transformación, carga y exploración.
-3. Indicadores de la muestra versionada: total, abiertos, cerrados, SLA, volumen mensual y estados. Un gráfico permite seleccionar una fecha y ver el backlog al cierre del día, con ventanas de 90 días, 12 meses o toda la historia.
-4. Cuatro escenarios guiados: volumen por mes, pendientes por equipo, SLA por canal y rechazos por equipo en mayo de 2023. Permiten llevar la misma pregunta al asistente.
-5. Una galería de las tres páginas del Power BI, con capturas reales cuando estén disponibles y un estado pendiente explícito cuando falten.
-6. Un asistente para preguntas sobre las métricas disponibles, incluido backlog a una fecha.
-7. Un recorrido progresivo por siete etapas del proyecto, cada una con enlace a su evidencia en el repositorio.
+1. Un caso de decisión ejecutivo: comparar el mes de mayor volumen con el de peor SLA del dataset sintético grande y explicar qué investigar antes de atribuir una causa.
+2. Indicadores operativos de la muestra pequeña versionada: total, abiertos, cerrados, SLA, volumen mensual y estados. Un gráfico permite seleccionar una fecha y ver el backlog al cierre del día, con ventanas de 90 días, 12 meses o toda la historia.
+3. Gráficos Matplotlib sobre el CSV grande y sus hallazgos calculados.
+4. Cinco etapas del flujo: generación, validación, transformación, carga y exploración.
+5. Cuatro escenarios guiados con preguntas orientadas a investigación. Permiten llevar la misma pregunta al asistente.
+6. Una galería de las tres páginas del Power BI, con capturas reales cuando estén disponibles y un estado pendiente explícito cuando falten; el PBIX sigue bajo edición.
+7. Un asistente para preguntas sobre las métricas disponibles, incluido backlog a una fecha.
+8. Un recorrido progresivo por nueve etapas del proyecto, cada una con enlace a su evidencia en el repositorio.
+
+La [revisión de storytelling](../docs/storytelling_review.md) explica el orden de lectura, la interpretación del caso y las limitaciones que siguen abiertas.
 
 El sitio está hecho con HTML, CSS y JavaScript sin un framework de interfaz. La aplicación de datos principal sigue en Python y PostgreSQL; Vercel aloja una presentación derivada de los CSV, no ejecuta el pipeline completo.
 

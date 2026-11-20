@@ -40,5 +40,17 @@
     "question": "¿Cómo mantener viva la demo sin perder reproducibilidad?",
     "result": "Una tarea diaria agrega casos sintéticos y actualiza los cierres recientes. El mismo corte siempre genera los mismos registros.",
     "evidence": ".github/workflows/daily_data.yml"
+  },
+  {
+    "title": "Escala para Power BI",
+    "question": "¿Cómo simular un volumen mensual parecido al de una operación grande?",
+    "result": "El generador conserva rangos de volumen y reparte las recepciones entre los días, con episodios sintéticos de capacidad.",
+    "evidence": "src/generate_full_scale_data.py"
+  },
+  {
+    "title": "Del indicador a la decisión",
+    "question": "¿Cómo evitar que un gráfico sea solo una cifra llamativa?",
+    "result": "Python y Matplotlib comparan volumen y SLA; la web plantea una investigación antes de atribuir una causa.",
+    "evidence": "src/analyze_full_scale_data.py"
   }
 ]

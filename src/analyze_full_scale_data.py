@@ -125,8 +125,7 @@ def plot(analysis: dict, output: Path) -> None:
         axes[2].annotate(f"{month['month']}: {month['slaRate']} %\n{month['episode']}",
                          (index, month["slaRate"]), xytext=(0, offset), textcoords="offset points",
                          ha="center", va="bottom" if offset > 0 else "top", fontsize=8, color=color)
-    fig.suptitle("Portabilidad sintética · análisis exploratorio con Python y Matplotlib", fontsize=16, weight="bold")
-    fig.text(.01, .002, f"Fuente: CSV sintético · Corte: {analysis['asOf']} (Argentina) · El mes en curso es parcial · No son datos reales", fontsize=9)
+    fig.suptitle(f"Portabilidad sintética · análisis con Python y Matplotlib\nCorte: {analysis['asOf'][:10]} (Argentina) · Mes en curso parcial", fontsize=14, weight="bold")
     output.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output, format="svg", facecolor=fig.get_facecolor(), metadata={"Date": None}, bbox_inches="tight", pad_inches=.25)
     plt.close(fig)

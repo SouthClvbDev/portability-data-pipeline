@@ -63,6 +63,8 @@ Si la persona marca la casilla de IA **y** existe `GEMINI_API_KEY` o `OPENAI_API
 
 El modelo devuelve únicamente una especificación de métrica, agrupación y filtros. El servidor valida sus valores contra el dataset y calcula la respuesta numérica. Si la interpretación falla, usa las reglas locales. Esto evita que la redacción de la IA invente cifras, aunque todavía puede interpretar mal la intención. El modo sin IA sigue siendo el predeterminado.
 
+Después de cada pregunta, la interfaz muestra el estado real de esa respuesta: **Gemini activo** cuando el modelo interpretó la consulta, **IA configurada · respuesta con reglas** cuando se aplicó el fallback determinista, o **IA sin configurar** cuando la función no encuentra una clave. La insignia se basa en `source` y `llmAvailable` devueltos por el servidor; no expone la API key.
+
 Sin almacenamiento compartido, existe un límite básico de **10 intentos de IA por IP y hora por instancia de función**. En serverless varias instancias o reinicios no comparten ese contador. Si se configuran `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN`, una operación atómica en Redis aplica además **30 interpretaciones por hora para todo el sitio** y **10 por visitante y hora**, incluso entre instancias. La clave del visitante se deriva de un hash de la IP; no se guarda la IP en claro en Redis. Si Redis falla o solo está configurada una de las dos variables, el modo IA usa la respuesta determinista y no llama al modelo. El modo `dataset` nunca depende de Redis.
 
 La cuota de aplicación limita llamadas, pero no sustituye un presupuesto o límite de gasto del proveedor. Las cuotas gratuitas y condiciones de Upstash o del proveedor del modelo pueden cambiar; verificar el plan antes de habilitarlos.

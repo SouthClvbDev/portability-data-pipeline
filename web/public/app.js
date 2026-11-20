@@ -202,12 +202,27 @@ async function loadTimeline() {
 async function ask(question) {
   message(question, 'user'); const pending = message('Consultando el resumen…', 'bot');
   try {
+    const requestedLlm = $('#llm').checked;
     const response = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, mode: $('#llm').checked ? 'llm' : 'dataset' }) });
     const data = await response.json();
     pending.textContent = data.answer || data.error || 'No pude responder esta vez.';
     if (data.note) pending.textContent += ` ${data.note}`;
-    if (data.llmAvailable === false) $('#llm-state').textContent = '(sin configurar)';
-  } catch { pending.textContent = 'No se pudo conectar con el asistente. Revisá el despliegue de la función.'; }
+    const state = $('#llm-state');
+    state.className = '';
+    if (data.source?.startsWith('interpreted:')) {
+      state.textContent = data.source === 'interpreted:gemini' ? 'Gemini activo' : 'IA activa';
+      state.classList.add('llm-active');
+    } else if (data.llmAvailable === false) {
+      state.textContent = 'IA sin configurar';
+      state.classList.add('llm-unavailable');
+    } else if (requestedLlm && data.llmAvailable) {
+      state.textContent = 'IA configurada · respuesta con reglas';
+      state.classList.add('llm-fallback');
+    } else if (data.llmAvailable) state.textContent = 'IA configurada';
+  } catch {
+    pending.textContent = 'No se pudo conectar con el asistente. Revisá el despliegue de la función.';
+    $('#llm-state').textContent = 'No se pudo verificar la IA';
+  }
 }
 
 $('#chat-form').addEventListener('submit', (event) => { event.preventDefault(); const input = $('#question'); const question = input.value.trim(); if (question) { input.value = ''; ask(question); } });

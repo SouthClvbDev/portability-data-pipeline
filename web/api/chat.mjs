@@ -92,12 +92,13 @@ async function interpretWithLlm(question, records, selected) {
 }
 
 export default async function handler(req, res) {
+  const selected = provider();
+  if (req.method === 'GET') return res.status(200).json({ llmAvailable: Boolean(selected), provider: selected });
   if (req.method !== 'POST') return res.status(405).json({ error: 'Usá POST.' });
   const question = typeof req.body?.question === 'string' ? req.body.question.trim() : '';
   if (!question || question.length > 300) return res.status(400).json({ error: 'La pregunta debe tener entre 1 y 300 caracteres.' });
   const records = await (recordsPromise ||= readFile(dataPath, 'utf8').then(JSON.parse).catch(error => { recordsPromise = null; throw error; }));
   const deterministic = answerQuery(question, records);
-  const selected = provider();
   if (req.body?.mode !== 'llm' || !selected || deterministic.spec?.metric === 'backlog' || ['unsupported', 'ambiguous', 'missing_date', 'out_of_range'].includes(deterministic.reason)) return res.status(200).json({ ...deterministic, source: 'dataset', llmAvailable: Boolean(selected) });
   const quota = await allowLlm(req);
   if (!quota.allowed) return res.status(200).json({ ...deterministic, source: 'dataset', llmAvailable: true, note: quota.note });

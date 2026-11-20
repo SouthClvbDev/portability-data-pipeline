@@ -15,6 +15,29 @@ const invoke = async (question, mode = 'dataset') => {
   return result;
 };
 
+const status = async () => {
+  let result;
+  const response = { status(code) { this.code = code; return this; }, json(body) { result = { code: this.code, ...body }; return this; } };
+  await handler({ method: 'GET', headers: {} }, response);
+  return result;
+};
+
+test('informa el proveedor configurado sin llamar al modelo', async () => {
+  const originalKey = process.env.GEMINI_API_KEY;
+  const originalFetch = globalThis.fetch;
+  let called = false;
+  process.env.GEMINI_API_KEY = 'test-only';
+  globalThis.fetch = async () => { called = true; throw new Error('No debería llamar al proveedor'); };
+  try {
+    assert.deepEqual(await status(), { code: 200, llmAvailable: true, provider: 'gemini' });
+    assert.equal(called, false);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalKey === undefined) delete process.env.GEMINI_API_KEY;
+    else process.env.GEMINI_API_KEY = originalKey;
+  }
+});
+
 test('la función responde un cruce calculado del dataset', async () => {
   const result = await invoke('¿Qué equipo tuvo más rechazos en mayo 2023?');
   assert.equal(result.code, 200);

@@ -40,6 +40,23 @@ function message(text, role) {
   return node;
 }
 
+function showLlmState(text, className = '') {
+  const state = $('#llm-state');
+  state.textContent = text;
+  state.className = className;
+}
+
+async function loadLlmStatus() {
+  try {
+    const response = await fetch('/api/chat');
+    if (!response.ok) throw new Error('Estado no disponible');
+    const data = await response.json();
+    if (data.provider === 'gemini') showLlmState('Gemini configurado', 'llm-active');
+    else if (data.llmAvailable) showLlmState('IA configurada', 'llm-active');
+    else showLlmState('IA sin configurar', 'llm-unavailable');
+  } catch { showLlmState('No se pudo verificar la IA', 'llm-fallback'); }
+}
+
 function element(tag, className, value) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -207,21 +224,16 @@ async function ask(question) {
     const data = await response.json();
     pending.textContent = data.answer || data.error || 'No pude responder esta vez.';
     if (data.note) pending.textContent += ` ${data.note}`;
-    const state = $('#llm-state');
-    state.className = '';
     if (data.source?.startsWith('interpreted:')) {
-      state.textContent = data.source === 'interpreted:gemini' ? 'Gemini activo' : 'IA activa';
-      state.classList.add('llm-active');
+      showLlmState(data.source === 'interpreted:gemini' ? 'Gemini activo' : 'IA activa', 'llm-active');
     } else if (data.llmAvailable === false) {
-      state.textContent = 'IA sin configurar';
-      state.classList.add('llm-unavailable');
+      showLlmState('IA sin configurar', 'llm-unavailable');
     } else if (requestedLlm && data.llmAvailable) {
-      state.textContent = 'IA configurada · respuesta con reglas';
-      state.classList.add('llm-fallback');
-    } else if (data.llmAvailable) state.textContent = 'IA configurada';
+      showLlmState('IA configurada · respuesta con reglas', 'llm-fallback');
+    } else if (data.llmAvailable) showLlmState('IA configurada');
   } catch {
     pending.textContent = 'No se pudo conectar con el asistente. Revisá el despliegue de la función.';
-    $('#llm-state').textContent = 'No se pudo verificar la IA';
+    showLlmState('No se pudo verificar la IA', 'llm-fallback');
   }
 }
 
@@ -229,6 +241,7 @@ $('#chat-form').addEventListener('submit', (event) => { event.preventDefault(); 
 document.querySelectorAll('[data-question]').forEach((button) => button.addEventListener('click', () => { $('#question').value = button.dataset.question; $('#question').focus(); }));
 document.querySelectorAll('.mobile-menu a').forEach(link => link.addEventListener('click', () => { link.closest('details').open = false; }));
 loadData();
+loadLlmStatus();
 fetch('/data/full-scale-analysis.json').then(response => response.json()).then(data => {
   $('#python-cutoff').textContent = `${number(data.total)} trámites del 2023-01-01 al ${data.asOf.replace('T', ' ')} (Argentina)`;
   const peak = data.insights.highestVolume;

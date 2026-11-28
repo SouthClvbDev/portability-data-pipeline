@@ -11351,15 +11351,26 @@ SIM-20261125-0004,2026-11-25 17:01:00,2026-11-26 18:12:24,Aprobado,Sucursal,Back
 SIM-20261125-0005,2026-11-25 15:07:00,2026-11-26 02:17:12,Aprobado,App,Backoffice Norte,Completa,Realizado,,,11.17
 SIM-20261125-0006,2026-11-25 08:25:00,2026-11-25 14:22:36,Aprobado,Web,Backoffice Sur,Completa,Realizado,,,5.96
 SIM-20261125-0007,2026-11-25 09:42:00,2026-11-26 01:04:48,Aprobado,Web,Backoffice Norte,Completa,Pendiente,,,15.38
-SIM-20261125-0008,2026-11-25 20:11:00,,Pendiente documentación,Distribuidor,Backoffice Sur,Incompleta,No corresponde,,,
+SIM-20261125-0008,2026-11-25 20:11:00,2026-11-27 05:03:48,Aprobado,Distribuidor,Backoffice Sur,Completa,No corresponde,,,32.88
 SIM-20261125-0009,2026-11-25 16:24:00,2026-11-26 09:36:00,Aprobado,Call Center,Backoffice Norte,Completa,Pendiente,,,17.2
 SIM-20261125-0010,2026-11-25 17:57:00,2026-11-26 03:28:12,Rechazado,Distribuidor,Backoffice Centro,Completa,No corresponde,Solicitud duplicada,,9.52
 SIM-20261125-0011,2026-11-25 12:34:00,2026-11-26 02:38:12,Rechazado,App,Backoffice Centro,Completa,Pendiente,Deuda con operador actual,,14.07
-SIM-20261126-0001,2026-11-26 13:38:00,,Pendiente contacto,Sucursal,Backoffice Norte,Completa,Pendiente,,,
-SIM-20261126-0002,2026-11-26 18:27:00,,Pendiente documentación,Call Center,Backoffice Norte,Incompleta,Realizado,,,
-SIM-20261126-0003,2026-11-26 14:34:00,,Pendiente documentación,Call Center,Backoffice Centro,Incompleta,Pendiente,,,
-SIM-20261126-0004,2026-11-26 13:52:00,,Pendiente documentación,App,Backoffice Sur,Incompleta,Realizado,,,
+SIM-20261126-0001,2026-11-26 13:38:00,2026-11-27 19:54:48,Aprobado,Sucursal,Backoffice Norte,Completa,Realizado,,,30.28
+SIM-20261126-0002,2026-11-26 18:27:00,2026-11-27 06:18:00,Aprobado,Call Center,Backoffice Norte,Completa,Realizado,,,11.85
+SIM-20261126-0003,2026-11-26 14:34:00,2026-11-27 17:14:48,Aprobado,Call Center,Backoffice Centro,Completa,Pendiente,,,26.68
+SIM-20261126-0004,2026-11-26 13:52:00,2026-11-27 09:44:48,Aprobado,App,Backoffice Sur,Completa,Realizado,,,19.88
 SIM-20261126-0005,2026-11-26 12:17:00,2026-11-26 18:20:36,Aprobado,Call Center,Backoffice Centro,Completa,Pendiente,,,6.06
-SIM-20261126-0006,2026-11-26 08:18:00,,Pendiente documentación,Sucursal,Backoffice Sur,Incompleta,Realizado,,,
+SIM-20261126-0006,2026-11-26 08:18:00,2026-11-27 04:05:24,Aprobado,Sucursal,Backoffice Sur,Completa,Realizado,,,19.79
 SIM-20261126-0007,2026-11-26 12:29:00,2026-11-26 18:16:24,Aprobado,Distribuidor,Backoffice Norte,Completa,Pendiente,,,5.79
 SIM-20261126-0008,2026-11-26 14:23:00,2026-11-26 23:46:24,Aprobado,App,Backoffice Centro,Completa,Pendiente,,,9.39
+SIM-20261127-0001,2026-11-27 19:43:00,,Pendiente documentación,Sucursal,Backoffice Sur,Incompleta,Realizado,,,
+SIM-20261127-0002,2026-11-27 17:23:00,,Pendiente contacto,Web,Backoffice Sur,Completa,Pendiente,,,
+SIM-20261127-0003,2026-11-27 15:20:00,,Pendiente documentación,Sucursal,Backoffice Centro,Incompleta,No corresponde,,,
+SIM-20261127-0004,2026-11-27 17:47:00,,Pendiente documentación,Call Center,Backoffice Sur,Incompleta,Realizado,,,
+SIM-20261127-0005,2026-11-27 14:29:00,,Pendiente documentación,Web,Backoffice Norte,Incompleta,Realizado,,,
+SIM-20261127-0006,2026-11-27 11:26:00,2026-11-27 19:36:48,Aprobado,Distribuidor,Backoffice Centro,Completa,Pendiente,,,8.18
+SIM-20261127-0007,2026-11-27 12:45:00,2026-11-27 18:16:48,Aprobado,Distribuidor,Backoffice Centro,Completa,No corresponde,,,5.53
+SIM-20261127-0008,2026-11-27 17:36:00,,Pendiente documentación,Distribuidor,Backoffice Sur,Incompleta,No corresponde,,,
+SIM-20261127-0009,2026-11-27 20:31:00,,Pendiente documentación,Call Center,Backoffice Sur,Incompleta,Pendiente,,,
+SIM-20261127-0010,2026-11-27 10:30:00,2026-11-27 13:13:12,Aprobado,Call Center,Backoffice Norte,Completa,No corresponde,,,2.72
+SIM-20261127-0011,2026-11-27 17:49:00,,Pendiente contacto,Web,Backoffice Sur,No requerida,Pendiente,,,
